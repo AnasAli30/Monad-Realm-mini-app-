@@ -1,8 +1,6 @@
 'use client'
 
-import { FarcasterActions } from '@/components/Home/FarcasterActions'
-import { User } from '@/components/Home/User'
-import { WalletActions } from '@/components/Home/WalletActions'
+
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 

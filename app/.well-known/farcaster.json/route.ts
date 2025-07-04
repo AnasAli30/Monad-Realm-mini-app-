@@ -3,7 +3,11 @@ import { APP_URL } from "../../../lib/constants";
 
 export async function GET() {
   const farcasterConfig = {
-    // TODO: Add account association
+   "accountAssociation": {
+      "header": "",
+      "payload": "",
+      "signature": ""
+    },
     frame: {
       version: "1",
       name: "Monad Realm",
