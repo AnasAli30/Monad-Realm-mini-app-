@@ -8,13 +8,21 @@ export default function CandyCrushGame() {
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
-  const [moves, setMoves] = useState(30);
+  const [moves, setMoves] = useState(10);
+  
+  // Challenge system state
+  const [challengeCandyType, setChallengeCandyType] = useState('1');
+  const [challengeTarget, setChallengeTarget] = useState(10);
+  const [challengeProgress, setChallengeProgress] = useState(0);
 
   const handleRestart = () => {
     setGameOver(false);
     setScore(0);
     setLevel(1);
-    setMoves(30);
+    setMoves(10);
+    setChallengeCandyType('1');
+    setChallengeTarget(10);
+    setChallengeProgress(0);
     
     if (gameRef.current) {
       const existingGame = gameRef.current.querySelector('canvas');
@@ -28,6 +36,10 @@ export default function CandyCrushGame() {
   const handleBackToMenu = () => {
     window.location.reload();
   };
+
+
+
+  const CANDY_TYPES = ['1', '2', '3', '4', '5', '6'];
 
   useEffect(() => {
     if (gameRef.current) {
@@ -45,14 +57,16 @@ export default function CandyCrushGame() {
     let scene: Phaser.Scene;
     let grid: any[][] = [];
     let gameScore = 0;
-    let gameLevel = 1;
-    let gameMoves = 30;
-    let targetScore = 1000;
+    let gameLevel = level;
+    let gameMoves = moves;
+    let gameChallengeCandy = challengeCandyType;
+    let gameChallengeTarget = challengeTarget;
+    let gameChallengeProgress = challengeProgress;
 
     const GRID_COLS = 6;
     const GRID_ROWS = 8;
-    const CANDY_SIZE = 50; // Smaller candy size to create padding
-    const CANDY_SPACING = 55; // Space between candy centers
+    const CANDY_SIZE = 55; // Smaller candy size to create padding
+    const CANDY_SPACING = 60; // Space between candy centers
     const CELL_PADDING = 7; // Padding inside each grid cell
     const GRID_PADDING = 0; // Padding around the entire grid
     const GRID_X = GRID_PADDING + 25;
@@ -63,15 +77,40 @@ export default function CandyCrushGame() {
       gridX: number;
       gridY: number;
       candyType: string;
+      debugBorder: Phaser.GameObjects.Graphics | null = null;
 
       constructor(scene: Phaser.Scene, x: number, y: number, gridX: number, gridY: number, type: string) {
         super(scene, x, y, 'candy-' + type);
         this.gridX = gridX;
         this.gridY = gridY;
         this.candyType = type;
+        
+        // Better scaling for crisp images
         this.setDisplaySize(CANDY_SIZE, CANDY_SIZE);
         this.setInteractive();
         scene.add.existing(this);
+      }
+      
+      showCollisionBorder() {
+        if (!this.debugBorder) {
+          this.debugBorder = this.scene.add.graphics();
+        }
+        this.debugBorder.clear();
+        this.debugBorder.lineStyle(3, 0xff0000, 1);
+        this.debugBorder.strokeRect(this.x - CANDY_SIZE/2, this.y - CANDY_SIZE/2, CANDY_SIZE, CANDY_SIZE);
+      }
+      
+      hideCollisionBorder() {
+        if (this.debugBorder) {
+          this.debugBorder.clear();
+        }
+      }
+      
+      destroy() {
+        if (this.debugBorder) {
+          this.debugBorder.destroy();
+        }
+        super.destroy();
       }
     }
 
@@ -81,9 +120,14 @@ export default function CandyCrushGame() {
         this.load.image('candy-' + type, `/candy/${type}.png`);
       });
       
-      // Log successful loads
-      this.load.on('filecomplete', (key: string) => {
-        console.log('✅ Loaded meme image:', key);
+      // Ensure images maintain quality when loaded
+      this.load.on('filecomplete-image', (key: string) => {
+        const texture = this.textures.get(key);
+        if (texture) {
+          // Set high quality filtering for each texture
+          texture.setFilter(Phaser.Textures.FilterMode.LINEAR);
+        }
+        console.log('✅ Loaded high-quality meme image:', key);
       });
       
       // Log any errors but don't create fallbacks
@@ -105,10 +149,13 @@ export default function CandyCrushGame() {
     }
 
     // UI Text objects - store references so we can update them
-    let scoreText: Phaser.GameObjects.Text;
-    let levelText: Phaser.GameObjects.Text;
-    let movesText: Phaser.GameObjects.Text;
-    let targetText: Phaser.GameObjects.Text;
+    let scoreText: Phaser.GameObjects.Text | null = null;
+    let levelText: Phaser.GameObjects.Text | null = null;
+    let movesText: Phaser.GameObjects.Text | null = null;
+    let challengeLabelText: Phaser.GameObjects.Text | null = null;
+    let challengeText: Phaser.GameObjects.Text | null = null;
+    let challengeIcon: Phaser.GameObjects.Sprite | null = null;
+    let statusText: Phaser.GameObjects.Text | null = null;
 
     function create(this: Phaser.Scene) {
       scene = this;
@@ -148,12 +195,27 @@ export default function CandyCrushGame() {
       initializeGrid();
       setupDragInput();
       
+      // Add periodic collision detection for debugging
+      this.time.addEvent({
+        delay: 2000, // Check every 2 seconds
+        callback: () => {
+          debugGrid('PERIODIC CHECK');
+          validateAndFixGrid();
+        },
+        loop: true
+      });
+      
       // Create UI text objects and store references
-      scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '18px', color: '#333' });
-      levelText = this.add.text(20, 45, 'Level: 1', { fontSize: '16px', color: '#333' });
-      movesText = this.add.text(20, 70, 'Moves: 30', { fontSize: '16px', color: '#333' });
-      targetText = this.add.text(20, 95, 'Target: 1000', { fontSize: '14px', color: '#666' });
-     
+      scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '16px', color: '#333' });
+      levelText = this.add.text(20, 40, 'Level: 1', { fontSize: '16px', color: '#333' });
+      movesText = this.add.text(20, 60, 'Moves: 10', { fontSize: '16px', color: '#333' });
+      // Challenge display with candy icon  
+      // challengeLabelText = this.add.text(20, 80, '', { fontSize: '14px', color: '#666' });
+      challengeIcon = this.add.sprite(30, 90, 'candy-' + gameChallengeCandy);
+      challengeIcon.setDisplaySize(30,30); // Small icon size
+      challengeText = this.add.text(40, 83, '(0/10)', { fontSize: '14px', color: '#666' });
+      
+    
       
       // Initialize UI
       updateUI();
@@ -165,24 +227,74 @@ export default function CandyCrushGame() {
       setScore(gameScore);
       setLevel(gameLevel);
       setMoves(gameMoves);
+      setChallengeProgress(gameChallengeProgress);
       
       // Update Phaser text objects
-      if (scoreText) scoreText.setText(`${gameScore}`);
+      if (scoreText) scoreText.setText(`Score: ${gameScore}`);
       if (levelText) levelText.setText(`Level: ${gameLevel}`);
       if (movesText) movesText.setText(`Moves: ${gameMoves}`);
-      if (targetText) targetText.setText(`Target: ${targetScore}`);
+      // Update challenge display
       
-      // Check for level progression
-      if (gameScore >= targetScore) {
+      
+      if (challengeText) {
+        challengeText.setText(`(${gameChallengeProgress}/${gameChallengeTarget})`);
+        
+        // Color coding for progress
+        if (gameChallengeProgress >= gameChallengeTarget) {
+          challengeText.setColor('#00aa00'); // Green when complete
+        } else if (gameChallengeProgress >= gameChallengeTarget * 0.7) {
+          challengeText.setColor('#ff8800'); // Orange when close
+        } else {
+          challengeText.setColor('#666'); // Gray otherwise
+        }
+      }
+      
+      // Update challenge icon when candy type changes
+      if (challengeIcon) {
+        challengeIcon.setTexture('candy-' + gameChallengeCandy);
+      }
+      
+      // Update status based on game state
+      if (statusText) {
+        if (!isGameStable) {
+          statusText.setText('⏳ Processing...');
+          statusText.setColor('#ff6600');
+        } else {
+          statusText.setText('✅ Ready to play');
+          statusText.setColor('#666');
+        }
+      }
+      
+      // Check for challenge completion - auto advance to next level
+      if (gameChallengeProgress >= gameChallengeTarget) {
+        console.log('🎉 Challenge completed! Auto advancing to next level...');
+        
+        // Increment level and generate new challenge
         gameLevel++;
-        targetScore = gameLevel * 1000; // Increase target each level
-        gameMoves += 5; // Give bonus moves for new level
-        updateUI(); // Update again with new values
+        
+        // Calculate new challenge parameters
+        const newChallengeTarget = 10 + (gameLevel - 1) * 5; // Start with 10, add 5 per level
+        const newChallengeCandy = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
+        
+        // Add moves equal to the new challenge target
+        gameMoves += newChallengeTarget;
+        
+        // Apply new challenge
+        gameChallengeCandy = newChallengeCandy;
+        gameChallengeTarget = newChallengeTarget;
+        gameChallengeProgress = 0;
+        
+        console.log(`🎯 New Level ${gameLevel} Challenge: Match ${gameChallengeTarget} candies of type ${gameChallengeCandy}`);
+        console.log(`💪 Bonus moves added: +${newChallengeTarget} (Total moves: ${gameMoves})`);
       }
     }
 
     function initializeGrid() {
+      console.log('🎯 Initializing grid');
+      
+      // Clear any existing grid state
       grid = [];
+      
       for (let row = 0; row < GRID_ROWS; row++) {
         grid[row] = [];
         for (let col = 0; col < GRID_COLS; col++) {
@@ -192,9 +304,24 @@ export default function CandyCrushGame() {
           
           const candy = new Candy(scene, x, y, col, row, candyType);
           
+          // Ensure position matches grid
+          candy.gridX = col;
+          candy.gridY = row;
+          
           grid[row][col] = candy;
         }
       }
+      
+      // Validate initial grid state
+      console.log('✅ Grid initialized, validating...');
+      debugGrid('AFTER INITIALIZATION');
+      validateAndFixGrid();
+      
+      // Game starts in stable state
+      isGameStable = true;
+      console.log('✅ Game initialized and stable');
+      console.log(`🎯 Level ${gameLevel} Challenge: Match ${gameChallengeTarget} candies of type ${gameChallengeCandy}`);
+      updateUI();
     }
 
     // Touch/drag variables
@@ -203,9 +330,17 @@ export default function CandyCrushGame() {
     let dragStartX = 0;
     let dragStartY = 0;
     let isProcessingSwap = false; // Prevent multiple simultaneous swaps
+    let isProcessingCascade = false; // Prevent multiple cascading operations
+    let isGameStable = true; // Only allow swaps when game is stable
 
     function setupDragInput() {
       scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        // Only allow input when game is stable
+        if (!isGameStable || isProcessingSwap || isProcessingCascade) {
+          console.log('🚫 Input blocked - game not stable');
+          return;
+        }
+        
         const candy = getCandyAtPosition(pointer.x, pointer.y);
         if (candy) {
           isDragging = true;
@@ -293,15 +428,119 @@ export default function CandyCrushGame() {
       return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
     }
 
-    function swapCandies(candy1: Candy, candy2: Candy) {
-      if (isProcessingSwap) return; // Prevent simultaneous swaps
-      isProcessingSwap = true;
+    function checkSwapValidity(candy1: Candy, candy2: Candy): boolean {
+      // Temporarily perform the swap to check if it creates matches
+      const originalCandy1Pos = { gridX: candy1.gridX, gridY: candy1.gridY };
+      const originalCandy2Pos = { gridX: candy2.gridX, gridY: candy2.gridY };
       
-      // Store original positions for potential revert
+      // Temporarily swap grid positions
+      grid[candy1.gridY][candy1.gridX] = candy2;
+      grid[candy2.gridY][candy2.gridX] = candy1;
+      
+      candy1.gridX = originalCandy2Pos.gridX;
+      candy1.gridY = originalCandy2Pos.gridY;
+      candy2.gridX = originalCandy1Pos.gridX;
+      candy2.gridY = originalCandy1Pos.gridY;
+      
+      // Check if this creates any matches
+      const isValid = checkForMatchesAfterSwap();
+      
+      // Immediately revert the temporary swap
+      grid[candy2.gridY][candy2.gridX] = candy1;
+      grid[candy1.gridY][candy1.gridX] = candy2;
+      
+      candy1.gridX = originalCandy1Pos.gridX;
+      candy1.gridY = originalCandy1Pos.gridY;
+      candy2.gridX = originalCandy2Pos.gridX;
+      candy2.gridY = originalCandy2Pos.gridY;
+      
+      return isValid;
+    }
+
+    function swapCandies(candy1: Candy, candy2: Candy) {
+      if (isProcessingSwap || !isGameStable) return; // Prevent simultaneous swaps and ensure stability
+      isProcessingSwap = true;
+      isGameStable = false; // Mark game as unstable during swap
+      updateUI(); // Update status immediately
+      
+      console.log(`🔄 Checking swap validity for [${candy1.gridY}][${candy1.gridX}] and [${candy2.gridY}][${candy2.gridX}]`);
+      
+      // Validate positions before any changes
+      if (grid[candy1.gridY][candy1.gridX] !== candy1) {
+        console.error(`🔴 SWAP ERROR: Candy1 not at expected position [${candy1.gridY}][${candy1.gridX}]`);
+        isProcessingSwap = false;
+        return;
+      }
+      if (grid[candy2.gridY][candy2.gridX] !== candy2) {
+        console.error(`🔴 SWAP ERROR: Candy2 not at expected position [${candy2.gridY}][${candy2.gridX}]`);
+        isProcessingSwap = false;
+        return;
+      }
+      
+      // Check if swap is valid BEFORE making any changes
+      if (!checkSwapValidity(candy1, candy2)) {
+        console.log(`❌ Invalid swap - no matches created, showing revert animation`);
+        
+        // Store original positions for revert animation
+        const originalCandy1 = { x: candy1.x, y: candy1.y };
+        const originalCandy2 = { x: candy2.x, y: candy2.y };
+        
+        // Calculate target positions for the "attempted" swap
+        const candy1NewX = GRID_X + candy2.gridX * CANDY_SPACING + CANDY_SPACING / 2;
+        const candy1NewY = GRID_Y + candy2.gridY * CANDY_SPACING + CANDY_SPACING / 2;
+        const candy2NewX = GRID_X + candy1.gridX * CANDY_SPACING + CANDY_SPACING / 2;
+        const candy2NewY = GRID_Y + candy1.gridY * CANDY_SPACING + CANDY_SPACING / 2;
+        
+        // Animate the "attempted" swap
+        scene.tweens.add({
+          targets: candy1,
+          x: candy1NewX,
+          y: candy1NewY,
+          duration: 150
+        });
+        
+        scene.tweens.add({
+          targets: candy2,
+          x: candy2NewX,
+          y: candy2NewY,
+          duration: 150,
+          onComplete: () => {
+            // Now animate back to original positions
+            triggerVibration([50, 50]); // Double short vibration for invalid swap
+            
+            scene.tweens.add({
+              targets: candy1,
+              x: originalCandy1.x,
+              y: originalCandy1.y,
+              duration: 150,
+              ease: 'Back.out'
+            });
+            
+            scene.tweens.add({
+              targets: candy2,
+              x: originalCandy2.x,
+              y: originalCandy2.y,
+              duration: 150,
+              ease: 'Back.out',
+              onComplete: () => {
+                isProcessingSwap = false;
+                isGameStable = true; // Game is stable again after invalid swap
+                console.log('✅ Game stable - invalid swap completed');
+                updateUI(); // Update status
+              }
+            });
+          }
+        });
+        return;
+      }
+      
+      console.log(`✅ Valid swap detected - proceeding with actual swap`);
+      
+      // Store original positions 
       const originalCandy1 = { gridX: candy1.gridX, gridY: candy1.gridY, x: candy1.x, y: candy1.y };
       const originalCandy2 = { gridX: candy2.gridX, gridY: candy2.gridY, x: candy2.x, y: candy2.y };
       
-      // Perform the swap
+      // Now perform the actual swap (we know it's valid)
       grid[candy1.gridY][candy1.gridX] = candy2;
       grid[candy2.gridY][candy2.gridX] = candy1;
       
@@ -329,56 +568,21 @@ export default function CandyCrushGame() {
         y: candy2NewY,
         duration: 200,
         onComplete: () => {
-          // Check if the swap created any matches
-          if (checkForMatchesAfterSwap()) {
-            // Valid swap - proceed with match removal
-            triggerVibration([100]); // Short vibration for successful swap
-            gameMoves--;
-            updateUI();
-            checkForMatches();
-            isProcessingSwap = false; // Clear flag after successful swap
-          } else {
-            // Invalid swap - revert back to original positions
-            triggerVibration([50, 50]); // Double short vibration for invalid swap
-            revertSwap(candy1, candy2, originalCandy1, originalCandy2);
-          }
+          debugGrid('AFTER VALID SWAP ANIMATION');
+          
+          // We already know this creates matches, so proceed directly
+          triggerVibration([100]); // Short vibration for successful swap
+          gameMoves--;
+          updateUI();
+          debugGrid('BEFORE MATCH CHECK');
+          checkForMatches();
+          isProcessingSwap = false; // Clear flag after successful swap
+          // Note: isGameStable will be set to true after all cascading completes
         }
       });
     }
 
-    function revertSwap(candy1: Candy, candy2: Candy, originalCandy1: any, originalCandy2: any) {
-      // Revert grid positions
-      grid[candy1.gridY][candy1.gridX] = candy1;
-      grid[candy2.gridY][candy2.gridX] = candy2;
-      
-      candy1.gridX = originalCandy1.gridX;
-      candy1.gridY = originalCandy1.gridY;
-      candy2.gridX = originalCandy2.gridX;
-      candy2.gridY = originalCandy2.gridY;
-      
-      // Animate back to original positions
-      scene.tweens.add({
-        targets: candy1,
-        x: originalCandy1.x,
-        y: originalCandy1.y,
-        duration: 200,
-        ease: 'Back.out'
-      });
-      
-      scene.tweens.add({
-        targets: candy2,
-        x: originalCandy2.x,
-        y: originalCandy2.y,
-        duration: 200,
-        ease: 'Back.out',
-        onComplete: () => {
-          isProcessingSwap = false; // Clear flag after revert complete
-        }
-      });
-      
-      // Show invalid move feedback (optional) - removed per user request
-      // showInvalidMoveEffect();
-    }
+
 
     function showInvalidMoveEffect() {
       // Create a brief "X" or "Invalid" text effect
@@ -522,23 +726,56 @@ export default function CandyCrushGame() {
       
       if (matches.length > 0) {
         removeMatches(matches);
-      } else if (gameMoves <= 0) {
-        setGameOver(true);
+      } else {
+        // No more matches found - game is now stable
+        isGameStable = true;
+        console.log('✅ Game stable - no more matches found');
+        updateUI(); // Update status
+        
+        if (gameMoves <= 0) {
+          setGameOver(true);
+        }
       }
     }
 
     function removeMatches(matches: Candy[]) {
+      // Count challenge candies in this match
+      let challengeCandiesMatched = 0;
+      matches.forEach(candy => {
+        if (candy && candy.candyType === gameChallengeCandy) {
+          challengeCandiesMatched++;
+        }
+      });
+      
+      // Update challenge progress
+      gameChallengeProgress += challengeCandiesMatched;
+      console.log(`🍭 Challenge progress: ${challengeCandiesMatched} candies of type ${gameChallengeCandy} matched (${gameChallengeProgress}/${gameChallengeTarget})`);
+      
       gameScore += matches.length * 100;
       updateUI();
+      
+      console.log(`💥 Removing ${matches.length} matches`);
       
       // Vibrate based on match size - bigger matches = longer vibration
       const vibrationIntensity = Math.min(matches.length * 30, 200);
       triggerVibration([vibrationIntensity]);
       
-      // Clear grid positions immediately
+      debugGrid('BEFORE MATCH REMOVAL');
+      
+      // Clear grid positions immediately and validate
       matches.forEach(candy => {
+        console.log(`🗑️ Clearing candy at [${candy.gridY}][${candy.gridX}]`);
+        
+        // Validate the candy is actually at the expected position
+        if (grid[candy.gridY][candy.gridX] !== candy) {
+          console.error(`🔴 REMOVE ERROR: Expected candy at [${candy.gridY}][${candy.gridX}] but found different candy`);
+          debugGrid('ERROR STATE');
+        }
+        
         grid[candy.gridY][candy.gridX] = null;
       });
+      
+      debugGrid('AFTER MATCH REMOVAL');
       
       // Animate removal
       let completedAnimations = 0;
@@ -554,91 +791,310 @@ export default function CandyCrushGame() {
             completedAnimations++;
             // Only proceed when ALL removal animations are done
             if (completedAnimations === matches.length) {
-              fillEmptySpaces();
+              debugGrid('BEFORE CASCADE');
+              animatedCascade();
             }
           }
         });
       });
     }
 
-    function fillEmptySpaces() {
+    function reconstructGrid() {
+      console.log('🔧 EMERGENCY: Reconstructing entire grid to fix collisions');
+      
+      // Collect all valid candy objects currently in the scene
+      const allCandies: Candy[] = [];
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          if (grid[row][col] && grid[row][col].active) {
+            allCandies.push(grid[row][col]);
+          }
+        }
+      }
+      
+      // Clear grid completely
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          grid[row][col] = null;
+        }
+      }
+      
+      // Sort candies by their visual Y position (bottom to top)
+      allCandies.sort((a, b) => b.y - a.y);
+      
+      // Place candies column by column from bottom up
+      const columnCandies: { [col: number]: Candy[] } = {};
+      
+      // Group candies by column
+      allCandies.forEach(candy => {
+        const col = Math.round((candy.x - GRID_X - CANDY_SPACING / 2) / CANDY_SPACING);
+        if (col >= 0 && col < GRID_COLS) {
+          if (!columnCandies[col]) columnCandies[col] = [];
+          columnCandies[col].push(candy);
+        }
+      });
+      
+      // Place candies in grid from bottom up
+      for (let col = 0; col < GRID_COLS; col++) {
+        const candiesInCol = columnCandies[col] || [];
+        
+        for (let i = 0; i < candiesInCol.length && i < GRID_ROWS; i++) {
+          const row = GRID_ROWS - 1 - i;
+          const candy = candiesInCol[i];
+          
+          grid[row][col] = candy;
+          candy.gridX = col;
+          candy.gridY = row;
+          
+          // Snap to correct position
+          const correctX = GRID_X + col * CANDY_SPACING + CANDY_SPACING / 2;
+          const correctY = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+          candy.setPosition(correctX, correctY);
+        }
+        
+        // Remove excess candies if any
+        for (let i = GRID_ROWS; i < candiesInCol.length; i++) {
+          candiesInCol[i].destroy();
+        }
+      }
+      
+      // Fill any remaining empty spaces
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          if (!grid[row][col]) {
+            const candyType = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
+            const x = GRID_X + col * CANDY_SPACING + CANDY_SPACING / 2;
+            const y = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+            
+            const candy = new Candy(scene, x, y, col, row, candyType);
+            grid[row][col] = candy;
+          }
+        }
+      }
+      
+      console.log('✅ Grid reconstruction complete');
+    }
+
+    function debugGrid(context: string) {
+      console.log(`🔍 GRID DEBUG (${context}):`);
+      
+      // Check for null entries
+      let nullCount = 0;
+      let candyCount = 0;
+      const visualPositions = new Map();
+      
+      for (let row = 0; row < GRID_ROWS; row++) {
+        let rowStr = '';
+        for (let col = 0; col < GRID_COLS; col++) {
+          const candy = grid[row][col];
+          if (candy) {
+            candyCount++;
+            rowStr += `[${candy.candyType}]`;
+            
+            // Check visual position
+            const visualKey = `${Math.round(candy.x)}-${Math.round(candy.y)}`;
+            if (visualPositions.has(visualKey)) {
+              console.error(`🔴 VISUAL COLLISION: Two candies at visual position ${visualKey}`);
+              console.error(`   Candy 1: [${visualPositions.get(visualKey).gridY}][${visualPositions.get(visualKey).gridX}]`);
+              console.error(`   Candy 2: [${candy.gridY}][${candy.gridX}]`);
+              
+              // Show red borders on colliding candies
+              visualPositions.get(visualKey).showCollisionBorder();
+              candy.showCollisionBorder();
+            } else {
+              // Hide border if no collision
+              candy.hideCollisionBorder();
+            }
+            visualPositions.set(visualKey, candy);
+            
+            // Check grid sync
+            if (candy.gridX !== col || candy.gridY !== row) {
+              console.error(`🔴 GRID DESYNC: Candy at [${row}][${col}] thinks it's at [${candy.gridY}][${candy.gridX}]`);
+            }
+          } else {
+            nullCount++;
+            rowStr += '[ ]';
+          }
+        }
+        console.log(`Row ${row}: ${rowStr}`);
+      }
+      
+      console.log(`📊 Total: ${candyCount} candies, ${nullCount} empty spaces`);
+      
+      // Check for duplicates in grid array
+      const gridCandies = new Set();
+      let duplicatesFound = false;
+      
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const candy = grid[row][col];
+          if (candy) {
+            if (gridCandies.has(candy)) {
+              console.error(`🔴 DUPLICATE CANDY REFERENCE: Same candy object in multiple grid positions`);
+              duplicatesFound = true;
+            }
+            gridCandies.add(candy);
+          }
+        }
+      }
+      
+      return { candyCount, nullCount, duplicatesFound };
+    }
+
+    function validateAndFixGrid() {
+      const debug = debugGrid('VALIDATION');
+      
+      if (debug.duplicatesFound) {
+        console.error('🚨 CRITICAL: Duplicate candy references found - forcing reconstruction');
+        reconstructGrid();
+        return false;
+      }
+      
+      return true;
+    }
+
+    function animatedCascade() {
+      if (isProcessingCascade) {
+        console.log('⏸️ Cascade already in progress, skipping');
+        return;
+      }
+      
+      isProcessingCascade = true;
+      console.log('🌊 Starting natural cascade');
+      
+      // Stop all tweens first
+      scene.tweens.killAll();
+      
+      // Check for and fix any collisions
+      if (!validateAndFixGrid()) {
+        // Grid was reconstructed, check for matches again
+        isProcessingCascade = false;
+        scene.time.delayedCall(100, () => checkForMatches());
+        return;
+      }
+      
       let totalAnimations = 0;
       let completedAnimations = 0;
       
-      // Process each column separately
+      // Process each column with natural gravity
       for (let col = 0; col < GRID_COLS; col++) {
-        // Collect all existing candies in this column
-        const existingCandies: Candy[] = [];
-        for (let row = 0; row < GRID_ROWS; row++) {
-          if (grid[row][col]) {
-            existingCandies.push(grid[row][col]);
-          }
-          grid[row][col] = null; // Clear the column
-        }
+        console.log(`🔽 Processing column ${col}`);
         
-        // Place existing candies at the bottom
-        for (let i = 0; i < existingCandies.length; i++) {
-          const newRow = GRID_ROWS - 1 - i;
-          const candy = existingCandies[existingCandies.length - 1 - i];
-          
-          grid[newRow][col] = candy;
-          candy.gridY = newRow;
-          candy.gridX = col; // Ensure gridX is correct
-          
-          const newY = GRID_Y + newRow * CANDY_SPACING + CANDY_SPACING / 2;
-          
-          // Only animate if position changed
-          if (Math.abs(candy.y - newY) > 5) {
-            totalAnimations++;
-            scene.tweens.add({
-              targets: candy,
-              y: newY,
-              duration: 250,
-              ease: 'Power2.out',
-              onComplete: () => {
-                completedAnimations++;
-                checkAllAnimationsComplete();
+        // Scan from bottom to top, filling empty spaces
+        for (let row = GRID_ROWS - 1; row >= 0; row--) {
+          if (grid[row][col] === null) {
+            // Found empty space, look for candy above to fall down
+            let foundCandyRow = -1;
+            for (let searchRow = row - 1; searchRow >= 0; searchRow--) {
+              if (grid[searchRow][col] !== null) {
+                foundCandyRow = searchRow;
+                break;
               }
-            });
+            }
+            
+            if (foundCandyRow >= 0) {
+              // Move candy from foundCandyRow to row
+              const fallingCandy = grid[foundCandyRow][col];
+              grid[foundCandyRow][col] = null;
+              grid[row][col] = fallingCandy;
+              
+              // Update candy's grid position
+              fallingCandy!.gridX = col;
+              fallingCandy!.gridY = row;
+              
+              const newY = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+              
+              // Animate the fall
+              totalAnimations++;
+              const fallDistance = row - foundCandyRow;
+              console.log(`📉 Candy falling from row ${foundCandyRow} to row ${row} (distance: ${fallDistance})`);
+              
+              scene.tweens.add({
+                targets: fallingCandy,
+                y: newY,
+                duration: 150 + (fallDistance * 50), // Longer falls take more time
+                ease: 'Power2.out',
+                onComplete: () => {
+                  completedAnimations++;
+                  checkAllAnimationsComplete();
+                }
+              });
+            }
           }
         }
         
-        // Fill remaining empty spaces with new candies
-        const emptySpaces = GRID_ROWS - existingCandies.length;
-        for (let i = 0; i < emptySpaces; i++) {
-          const row = i;
-          const candyType = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
-          const x = GRID_X + col * CANDY_SPACING + CANDY_SPACING / 2;
-          const y = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+        // After all existing candies have fallen, add new candies at the top
+        let newCandiesNeeded = 0;
+        for (let row = 0; row < GRID_ROWS; row++) {
+          if (grid[row][col] === null) {
+            newCandiesNeeded++;
+          }
+        }
+        
+        if (newCandiesNeeded > 0) {
+          console.log(`➕ Adding ${newCandiesNeeded} new candies to column ${col}`);
           
-          // Start candies above the grid
-          const candy = new Candy(scene, x, y - CANDY_SPACING * (emptySpaces + 1), col, row, candyType);
-          grid[row][col] = candy;
-          
-          totalAnimations++;
-          scene.tweens.add({
-            targets: candy,
-            y: y,
-            duration: 300 + i * 50, // Stagger new candy drops
-            ease: 'Bounce.out',
-            onComplete: () => {
-              completedAnimations++;
-              checkAllAnimationsComplete();
+          let addedCandies = 0;
+          for (let row = 0; row < GRID_ROWS; row++) {
+            if (grid[row][col] === null) {
+              const candyType = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
+              const x = GRID_X + col * CANDY_SPACING + CANDY_SPACING / 2;
+              const y = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+              
+              // Start candy above the grid
+              const startY = y - CANDY_SPACING * (newCandiesNeeded + 2);
+              const candy = new Candy(scene, x, startY, col, row, candyType);
+              grid[row][col] = candy;
+              
+              totalAnimations++;
+              
+              scene.tweens.add({
+                targets: candy,
+                y: y,
+                duration: 200 + (addedCandies * 30), // Stagger new candies
+                ease: 'Bounce.out',
+                delay: 100, // Small delay to let existing candies fall first
+                onComplete: () => {
+                  completedAnimations++;
+                  checkAllAnimationsComplete();
+                }
+              });
+              
+              addedCandies++;
             }
-          });
+          }
         }
       }
       
-      // If no animations, check for matches immediately
+      // If no animations needed, proceed immediately
       if (totalAnimations === 0) {
-        scene.time.delayedCall(100, () => checkForMatches());
+        console.log('📭 No cascade animations needed');
+        finalizeCascade();
+        return;
       }
+      
+      console.log(`📊 Starting ${totalAnimations} natural cascade animations`);
       
       function checkAllAnimationsComplete() {
         if (completedAnimations >= totalAnimations) {
-          // All animations complete, now check for new matches
-          scene.time.delayedCall(200, () => checkForMatches());
+          console.log(`✅ All ${totalAnimations} cascade animations completed`);
+          finalizeCascade();
         }
+      }
+      
+      function finalizeCascade() {
+        // Final validation
+        debugGrid('AFTER CASCADE');
+        validateAndFixGrid();
+        
+        isProcessingCascade = false;
+        
+        // Check for matches after brief delay
+        scene.time.delayedCall(150, () => {
+          console.log('🔍 Cascade complete, checking matches');
+          debugGrid('BEFORE NEXT MATCH CHECK');
+          checkForMatches();
+        });
       }
     }
 
@@ -647,6 +1103,21 @@ export default function CandyCrushGame() {
       width: 400,
       height: 800,
       parent: gameRef.current,
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        // Handle high DPI displays for better image quality
+        zoom: window.devicePixelRatio || 1
+      },
+      render: {
+        // High quality rendering settings
+        antialias: true,
+        pixelArt: false,
+        roundPixels: false,
+        powerPreference: 'high-performance',
+        batchSize: 4096,
+        mipmapFilter: 'LINEAR_MIPMAP_LINEAR'
+      },
       scene: {
         preload: preload,
         create: create
@@ -667,12 +1138,14 @@ export default function CandyCrushGame() {
       backgroundColor: '#f0f8ff'
     }}>
       <div ref={gameRef} style={{ 
-        width: '400px', 
+        width: '100%', 
         height: '800px',
         maxWidth: '100vw',
         maxHeight: '100vh'
       }} />
       
+
+
       {gameOver && (
         <div style={{
           position: 'absolute',
@@ -697,6 +1170,7 @@ export default function CandyCrushGame() {
             <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>🍭 Game Over!</h2>
             <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}>Final Score: {score}</p>
             <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}>Level: {level}</p>
+            <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}> {challengeCandyType} ({challengeProgress}/{challengeTarget})</p>
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <button 
                 onClick={handleRestart} 
