@@ -42,9 +42,7 @@ export function Demo() {
     return <VerticalJumperGame />;
   }
 
-  if (currentView === 'archerGame') {
-    return <StickmanArcherGame />;
-  }
+
 
   if (currentView === 'candyGame') {
     return <CandyCrushGame />;
