@@ -9,6 +9,8 @@ export default function VerticalJumperGame() {
   const [showRestartBtn, setShowRestartBtn] = useState(false);
   const [gameKey, setGameKey] = useState(0); // for remounting Phaser game
   const [gameReady, setGameReady] = useState(false); // Track if game is ready
+  const [gameOver, setGameOver] = useState(false); // Track game over state for blur effect
+  const [gameOverData, setGameOverData] = useState({ score: 0, time: '00:00', bestScore: 0 }); // Game over data
   const tiltXRef = useRef(0);
 
   useEffect(() => {
@@ -50,6 +52,8 @@ export default function VerticalJumperGame() {
   const handleRestart = () => {
     setShowRestartBtn(false);
     setGameReady(false); // Reset game ready state
+    setGameOver(false); // Reset game over state
+    setGameOverData({ score: 0, time: '00:00', bestScore: 0 }); // Reset game over data
     phaserGameRef.current?.destroy(true);
     phaserGameRef.current = null;
     setGameKey((k) => k + 1); // trigger remount
@@ -120,6 +124,9 @@ export default function VerticalJumperGame() {
     let scoreMax: Phaser.GameObjects.Text;
     let gameOverText: Phaser.GameObjects.Text;
     let timerText: Phaser.GameObjects.Text;
+    let finalScoreText: Phaser.GameObjects.Text;
+    let maxScoreText: Phaser.GameObjects.Text;
+    let gameOverOverlay: Phaser.GameObjects.Graphics;
 
     function preload(this: Phaser.Scene) {
       this.load.image('background', '/images/jump/background.png');
@@ -152,19 +159,21 @@ export default function VerticalJumperGame() {
       (this as any).currentBgTexture = 'background';
       (this as any).bgTransitioning = false;
       scoreText = this.add
-        .text(20, 60, 'score: 0', { fontSize: '32px', color: '#fff' })
+        .text(130, 10, 'Score: 0', { fontSize: '32px', color: '#fff', fontStyle: 'bold' })
         .setScrollFactor(0)
         .setDepth(5);
-      scoreMax = this.add
-        .text(20, 80, `Max Score: ${localStorage.getItem('maxScore') || 0}`, {
-          fontSize: '18px',
-          color: '#ffffff',
-        })
+      // scoreMax = this.add
+      //   .text(20, 80, `Max Score: ${localStorage.getItem('maxScore') || 0}`, {
+      //     fontSize: '18px',
+      //     color: '#ffffff',
+      //   })
+        // .setScrollFactor(0)
+        // .setDepth(5);
+      gameOverText = this.add.text(320, 150, 'GAME OVER', { fontSize: '50px', color: '#ffffff', fontStyle: 'bold' })
         .setScrollFactor(0)
         .setDepth(5);
-      gameOverText = this.add.text(150, 300, 'GAME OVER ', { fontSize: '64px', color: '#fff' })
-        .setScrollFactor(0)
-        .setDepth(5);
+      gameOverText.setOrigin(0.5, 0.5); // Center the text
+      gameOverText.setShadow(2, 2, '#000000', 4); // Add shadow for better visibility
       gameOverText.visible = false;
       this.anims.create({
         key: 'jump',
@@ -458,7 +467,7 @@ export default function VerticalJumperGame() {
             default:
               gravityMultiplier = 1.0;
           }
-          player.body.setGravityY(500 * (gravityMultiplier - 1)); // Additional gravity
+          player.body.setGravityY(600 * (gravityMultiplier - 1)); // Additional gravity
           
           // @ts-ignore
           this.jumpSound.play();
@@ -481,7 +490,28 @@ export default function VerticalJumperGame() {
         // @ts-ignore
         this.gameOverSound.play();
         gameOver = true;
-        gameOverText.visible = true;
+        gameOverOverlay.visible = true; // Show blur overlay
+        
+        // Hide Phaser text elements (we'll show them in React)
+        gameOverText.visible = false;
+        timerText.visible = false;
+        finalScoreText.visible = false;
+        maxScoreText.visible = false;
+        
+        // Calculate game over data
+        const displayScore = Math.max(0, score - scorePenalty);
+        const minutes = Math.floor(gameTimer / 60);
+        const seconds = gameTimer % 60;
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const maxScore = parseInt(localStorage.getItem('maxScore') || '0');
+        
+        // Pass data to React state
+        setGameOverData({
+          score: displayScore,
+          time: formattedTime,
+          bestScore: maxScore
+        });
+        setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
         player.body.allowGravity = true;
         player.setVelocityY(600);
@@ -526,7 +556,7 @@ export default function VerticalJumperGame() {
             default:
               gravityMultiplier = 1.0;
           }
-          player.body.setGravityY(500 * (gravityMultiplier - 1)); // Additional gravity
+          player.body.setGravityY(600 * (gravityMultiplier - 1)); // Additional gravity
           
           // @ts-ignore
           this.eatSound.play();
@@ -602,17 +632,54 @@ export default function VerticalJumperGame() {
         });
       };
 
-      // Timer text at the top center
-      timerText = this.add.text(320, 20, 'Time: 00:00', {
-        fontSize: '20px',
+      // Timer text (hidden during gameplay, shown on game over)
+      timerText = this.add.text(320, 220, 'Time: 00:00', {
+        fontSize: '24px',
         color: '#ffff00', // Yellow color for timer
+        fontStyle: 'bold'
       });
-      timerText.setOrigin(0.5, 0); // Center horizontally
+      timerText.setOrigin(0.5, 0.5); // Center horizontally
+      timerText.setDepth(5); // Above overlay
+      timerText.setShadow(2, 2, '#000000', 4); // Add shadow for better visibility
+      timerText.visible = false; // Hide during gameplay
+      
+      // Final score text (shown on game over)
+      finalScoreText = this.add.text(320, 270, 'Score: 0', {
+        fontSize: '28px',
+        color: '#ffffff',
+        fontStyle: 'bold'
+      });
+      finalScoreText.setOrigin(0.5, 0.5);
+      finalScoreText.setDepth(5); // Above overlay
+      finalScoreText.setShadow(2, 2, '#000000', 4); // Add shadow for better visibility
+      finalScoreText.visible = false;
+      
+      // Max score text (shown on game over)
+      maxScoreText = this.add.text(320, 320, 'Best: 0', {
+        fontSize: '24px',
+        color: '#ffd700', // Gold color for best score
+        fontStyle: 'bold'
+      });
+      maxScoreText.setOrigin(0.5, 0.5);
+      maxScoreText.setDepth(5); // Above overlay
+      maxScoreText.setShadow(2, 2, '#000000', 4); // Add shadow for better visibility
+      maxScoreText.visible = false;
+      
+      // Game over blur overlay - handled with CSS blur on the game container
+      // Keep a light overlay for contrast
+      gameOverOverlay = this.add.graphics();
+      gameOverOverlay.fillStyle(0x000000, 0.2); // Very light semi-transparent
+      gameOverOverlay.fillRect(0, 0, 640, window.innerHeight);
+      gameOverOverlay.setScrollFactor(0);
+      gameOverOverlay.setDepth(3); // Behind text but above game
+      gameOverOverlay.visible = false;
       
       scoreText.setScrollFactor(0);
-      scoreMax.setScrollFactor(0);
+      // scoreMax.setScrollFactor(0);
       timerText.setScrollFactor(0);
       gameOverText.setScrollFactor(0);
+      finalScoreText.setScrollFactor(0);
+      maxScoreText.setScrollFactor(0);
     }
 
     function update(this: Phaser.Scene) {
@@ -637,7 +704,7 @@ export default function VerticalJumperGame() {
       }
       if (gameOver) return;
       
-      // Update timer
+      // Update timer (but keep it hidden during gameplay)
       if (!gameOver) {
         gameTimer = Math.floor((Date.now() - gameStartTime) / 1000);
         const minutes = Math.floor(gameTimer / 60);
@@ -843,7 +910,7 @@ export default function VerticalJumperGame() {
       for (let i = 1; i < 13; i++) {
         // More challenging: randomize X fully within bounds
         const x = Phaser.Math.Between(60, 580);
-        const y = lastY - Phaser.Math.Between(120, 200);
+        const y = lastY - Phaser.Math.Between(100, 150);
         
         // Randomly choose platform type
         const currentDiff = getDifficulty(Math.max(0, score - scorePenalty));
@@ -996,7 +1063,7 @@ export default function VerticalJumperGame() {
         if (platform.y > player.y && player.body.center.distance(platform.body.center) > 700) {
           // More challenging: randomize X fully within bounds
           const x = Phaser.Math.Between(60, 580);
-          const y = minY - Phaser.Math.Between(120, 200);
+          const y = minY - Phaser.Math.Between(100, 150);
           
           platform.x = x;
           platform.y = y;
@@ -1102,7 +1169,28 @@ export default function VerticalJumperGame() {
     function checkIfFall(physics: Phaser.Physics.Arcade.ArcadePhysics) {
       if (player.body.y > gameOverDistance) {
         gameOver = true;
-        gameOverText.visible = true;
+        gameOverOverlay.visible = true; // Show blur overlay
+        
+        // Hide Phaser text elements (we'll show them in React)
+        gameOverText.visible = false;
+        timerText.visible = false;
+        finalScoreText.visible = false;
+        maxScoreText.visible = false;
+        
+        // Calculate game over data
+        const displayScore = Math.max(0, score - scorePenalty);
+        const minutes = Math.floor(gameTimer / 60);
+        const seconds = gameTimer % 60;
+        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        const maxScore = parseInt(localStorage.getItem('maxScore') || '0');
+        
+        // Pass data to React state
+        setGameOverData({
+          score: displayScore,
+          time: formattedTime,
+          bestScore: maxScore
+        });
+        setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
         player.anims.play('playerIdle', true);
         player.body.allowGravity = true;
@@ -1126,7 +1214,7 @@ export default function VerticalJumperGame() {
         highestY = currentHeight;
         // Display score minus penalties
         const displayScore = Math.max(0, score - scorePenalty);
-        scoreText.setText('Score: ' + displayScore);
+        scoreText.setText(displayScore.toString());
       }
       storeMaxScore();
     }
@@ -1135,7 +1223,7 @@ export default function VerticalJumperGame() {
       const displayScore = Math.max(0, score - scorePenalty);
       if (parseInt(localStorage.getItem('maxScore') || '0') < displayScore) {
         localStorage.setItem('maxScore', displayScore.toString());
-        scoreMax.setText(`Max Score: ${localStorage.getItem('maxScore')}`);
+        // scoreMax.setText(`Max Score: ${localStorage.getItem('maxScore')}`);
       }
     }
 
@@ -1147,7 +1235,7 @@ export default function VerticalJumperGame() {
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { x: 0, y: 500 },
+          gravity: { x: 0, y: 800 },
           debug: false,
         },
       },
@@ -1238,15 +1326,148 @@ export default function VerticalJumperGame() {
           Enable Tilt Controls
         </button>
       )}
+      {gameOver && (
+        <>
+          {/* Back to Games Button - Top Left */}
+          <button
+            style={{
+              position: 'fixed',
+              top: '30px',
+              left: '0px',
+              zIndex: 2100,
+              padding: '8px 16px',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              pointerEvents: 'auto'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onClick={() => {
+              // Navigate back to games section
+              window.history.back();
+            }}
+          >
+◀ Games
+          </button>
+          
+          {/* Game Over Content */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            pointerEvents: 'none' // Allow clicks to pass through except for button
+          }}>
+            {/* Game Over Text */}
+            <h1 style={{
+              fontSize: '50px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 20px 0',
+              textAlign: 'center'
+            }}>
+              GAME OVER
+            </h1>
+            
+            {/* Timer */}
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#ffff00',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 10px 0'
+            }}>
+              Time: {gameOverData.time}
+            </div>
+            
+            {/* Current Score */}
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 10px 0'
+            }}>
+              Score: {gameOverData.score}
+            </div>
+            
+            {/* Best Score */}
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#ffd700',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 30px 0'
+            }}>
+              Best: {gameOverData.bestScore}
+            </div>
+          </div>
+        </>
+      )}
+
       {showRestartBtn && (
         <button
-          style={{ position: 'absolute', top: 100, right: 20, zIndex: 2000 }}
+          style={{ 
+            position: 'fixed', 
+            bottom: '80px', 
+            left: '50%', 
+            transform: 'translateX(-50%)',
+            zIndex: 2000,
+            padding: '10px 40px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            transition: 'all 0.5s ease',
+            pointerEvents: 'auto' // Enable clicks for button
+          }}
+                     onMouseEnter={(e) => {
+             e.currentTarget.style.backgroundColor = '#45a049';
+             e.currentTarget.style.transform = 'translateX(-50%) scale(1.05)';
+           }}
+           onMouseLeave={(e) => {
+             e.currentTarget.style.backgroundColor = '#4CAF50';
+             e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
+           }}
           onClick={handleRestart}
         >
-          Restart Game
+         ▶ Play Again 
         </button>
       )}
-      <div key={gameKey} ref={gameRef} style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000 }} />
+      <div 
+        key={gameKey} 
+        ref={gameRef} 
+        style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          zIndex: 1000,
+          filter: gameOver ? 'blur(3px)' : 'none',
+          transition: 'filter 0.5s ease'
+        }} 
+      />
       
       {/* Add CSS animations */}
       <style jsx>{`
