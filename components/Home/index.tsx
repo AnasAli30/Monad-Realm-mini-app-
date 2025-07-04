@@ -21,33 +21,33 @@ export function Demo() {
     return <VerticalJumperGame />;
   }
 
-  if (currentView === 'loading') {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        <div className="text-center space-y-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-8">Monad Jump</h1>
-          <p className="text-xl text-gray-600 mb-8">Loading game...</p>
+  // if (currentView === 'loading') {
+  //   return (
+  //     <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8 bg-gradient-to-br from-gray-50 via-white to-gray-100">
+  //       <div className="text-center space-y-6">
+  //         <h1 className="text-4xl font-bold text-gray-800 mb-8">Monad Jump</h1>
+  //         <p className="text-xl text-gray-600 mb-8">Loading game...</p>
           
-          {/* Spinner Loader */}
-          <div className="flex justify-center mb-8">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
-          </div>
+  //         {/* Spinner Loader */}
+  //         <div className="flex justify-center mb-8">
+  //           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
+  //         </div>
           
-          {/* Progress Bar */}
-          <div className="w-80 bg-gray-200 rounded-full h-2 mx-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full animate-pulse" style={{width: '100%'}}></div>
-          </div>
+  //         {/* Progress Bar */}
+  //         <div className="w-80 bg-gray-200 rounded-full h-2 mx-auto">
+  //           <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full animate-pulse" style={{width: '100%'}}></div>
+  //         </div>
           
-          {/* Loading Messages */}
-          <div className="space-y-2">
-            <p className="text-gray-500 animate-pulse">Initializing game engine...</p>
-            <p className="text-gray-500 animate-pulse">Loading assets...</p>
-            <p className="text-gray-500 animate-pulse">Preparing platforms...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //         {/* Loading Messages */}
+  //         <div className="space-y-2">
+  //           <p className="text-gray-500 animate-pulse">Initializing game engine...</p>
+  //           <p className="text-gray-500 animate-pulse">Loading assets...</p>
+  //           <p className="text-gray-500 animate-pulse">Preparing platforms...</p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (currentView === 'singlePlayer') {
     return (

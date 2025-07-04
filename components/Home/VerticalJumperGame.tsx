@@ -1,8 +1,11 @@
 'use client'
 import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
+import { useMiniAppContext } from '@/hooks/use-miniapp-context';
+import { APP_URL } from '@/lib/constants';
 
 export default function VerticalJumperGame() {
+  const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [showPermissionBtn, setShowPermissionBtn] = useState(false);
@@ -1284,16 +1287,7 @@ export default function VerticalJumperGame() {
             <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Monad Jump</h1>
             <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>Initializing game...</p>
             
-            {/* Spinner */}
-            <div style={{ 
-              width: '64px', 
-              height: '64px', 
-              border: '4px solid #e5e7eb',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 2rem'
-            }}></div>
+            
             
             {/* Progress Bar */}
             <div style={{ 
@@ -1384,36 +1378,74 @@ export default function VerticalJumperGame() {
             }}>
               GAME OVER
             </h1>
-            
-            {/* Timer */}
-            <div style={{
-              fontSize: '24px',
-              fontWeight: 'bold',
-              color: '#ffff00',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 10px 0'
-            }}>
-              Time: {gameOverData.time}
-            </div>
-            
-            {/* Current Score */}
-            <div style={{
+               {/* Current Score */}
+               <button style={{
               fontSize: '28px',
               fontWeight: 'bold',
+              border: '1px solid #ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
               color: '#ffffff',
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 10px 0'
+              margin: '0 0 10px 0',
+              cursor: 'pointer',
+              zIndex: 2001,
+              pointerEvents: 'auto',
+              backgroundColor: 'transparent'
+              
+            }} onClick={async () => {
+              try {
+                // Create share text with embed link
+                const shareText = `🎮 Just scored ${gameOverData.score} in just ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Monad Realm! 🚀\n\nCan you beat my score? Play now`;
+                
+                console.log('Actions available:', !!actions);
+                console.log('Context available:', !!context);
+                
+                if (actions && actions.composeCast) {
+                  await actions.composeCast({
+                    text: shareText,
+                    embeds: [`${APP_URL}`],
+                  });
+                  console.log('Cast composed successfully');
+                } 
+              } catch (error) {
+                console.error('Error sharing score:', error);
+                // Final fallback
+                const fullText = `🎮 Just scored ${gameOverData.score} points in Monad Realm! 🚀\n\nCan you beat my score? Play now\n\n${APP_URL}`;
+               
+              }
             }}>
-              Score: {gameOverData.score}
-            </div>
+              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '6px'}}>Cast my score</p>
+               {gameOverData.score}
+           <div style={{
+            width: '100%',
+            height: '2px',
+            backgroundColor: '#ffffff',
+            opacity: '0.7',
+            margin: '10px 0'
+           }}> </div>
+               <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '1px'}}>{gameOverData.time.split(':')[0]}m {gameOverData.time.split(':')[1]}s</p>
+        
+         
+            </button>
+            
+            {/* Timer */}
+            
+            
+         
             
             {/* Best Score */}
             <div style={{
-              fontSize: '24px',
+              fontSize: '22px',
               fontWeight: 'bold',
-              color: '#ffd700',
+              color: '#ffffff',
+              border: '1px solid #ffffff',
+              padding: '1px 10px',
+              borderRadius: '10px',
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
               margin: '0 0 30px 0'
+
+
             }}>
               Best: {gameOverData.bestScore}
             </div>
