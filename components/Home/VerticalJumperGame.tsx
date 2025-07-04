@@ -157,7 +157,7 @@ export default function VerticalJumperGame() {
       (this as any).currentBgTexture = 'background';
       (this as any).bgTransitioning = false;
       scoreText = this.add
-        .text(20, 60, 'score: 0', { fontSize: '32px', fill: '#fff' })
+        .text(20, 60, 'score: 0', { fontSize: '32px', color: '#fff' })
         .setScrollFactor(0)
         .setDepth(5);
       scoreMax = this.add
@@ -167,7 +167,7 @@ export default function VerticalJumperGame() {
         })
         .setScrollFactor(0)
         .setDepth(5);
-      gameOverText = this.add.text(150, 300, 'GAME OVER ', { fontSize: '64px', fill: '#fff', })
+      gameOverText = this.add.text(150, 300, 'GAME OVER ', { fontSize: '64px', color: '#fff' })
         .setScrollFactor(0)
         .setDepth(5);
       gameOverText.visible = false;
@@ -559,7 +559,7 @@ export default function VerticalJumperGame() {
         });
       });
       this.cameras.main.startFollow(player, false, 0, 1);
-      createKeys(this.input.keyboard);
+      createKeys(this.input.keyboard!);
 
       // Store enemy shooting timer
       (this as any).enemyShootTimer = 0;
@@ -652,7 +652,7 @@ export default function VerticalJumperGame() {
       }
       
       // Update background music speed based on difficulty
-      if (this.bgdMusic && !gameOver) {
+      if ((this as any).bgdMusic && !gameOver) {
         const currentDiff = getDifficulty(Math.max(0, score - scorePenalty));
         let musicSpeed;
         switch (currentDiff) {
@@ -671,7 +671,7 @@ export default function VerticalJumperGame() {
           default:
             musicSpeed = 1.0;
         }
-        this.bgdMusic.setRate(musicSpeed);
+        (this as any).bgdMusic.setRate(musicSpeed);
         
         // Update background based on difficulty with smooth transitions
         let targetBgTexture;
@@ -923,6 +923,7 @@ export default function VerticalJumperGame() {
         platform.body.checkCollision.down = false;
         platform.body.checkCollision.left = false;
         platform.body.checkCollision.right = false;
+        return null;
       });
     }
 
@@ -951,6 +952,7 @@ export default function VerticalJumperGame() {
         // enemy2 is a GIF, so no animation needed
         // Set creation time for 5-second delay before shooting
         enemy.creationTime = Date.now();
+        return null;
       });
     }
 
@@ -969,6 +971,7 @@ export default function VerticalJumperGame() {
       ball.children.iterate(function (balls: any) {
         balls.body.setSize(30, 30);
         balls.body.setAllowGravity(false);
+        return null;
       });
     }
 
@@ -992,6 +995,7 @@ export default function VerticalJumperGame() {
           lastX = platform.x;
           lastY = platform.y;
         }
+        return null;
       });
       platforms.children.iterate(function (platform: any) {
         if (platform.y > player.y && player.body.center.distance(platform.body.center) > 700) {
@@ -1041,6 +1045,7 @@ export default function VerticalJumperGame() {
           lastX = x;
           minY = y;
         }
+        return null;
       });
     }
 
@@ -1073,6 +1078,7 @@ export default function VerticalJumperGame() {
           // Reset creation time for 5-second delay before shooting
           enemy.creationTime = Date.now();
         }
+        return null;
       });
     }
 
@@ -1094,6 +1100,7 @@ export default function VerticalJumperGame() {
           ball.y = ball.y - Phaser.Math.Between(1600, 2000);
           ball.enableBody(true, ball.x, ball.y, true, true);
         }
+        return null;
       });
     }
 
@@ -1131,7 +1138,7 @@ export default function VerticalJumperGame() {
 
     function storeMaxScore() {
       const displayScore = Math.max(0, score - scorePenalty);
-      if ((localStorage.getItem('maxScore') || 0) < displayScore) {
+      if (parseInt(localStorage.getItem('maxScore') || '0') < displayScore) {
         localStorage.setItem('maxScore', displayScore.toString());
         scoreMax.setText(`Max Score: ${localStorage.getItem('maxScore')}`);
       }
@@ -1145,7 +1152,7 @@ export default function VerticalJumperGame() {
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { y: 500 },
+          gravity: { x: 0, y: 500 },
           debug: false,
         },
       },
