@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 const VerticalJumperGame = dynamic(() => import('@/components/Home/VerticalJumperGame'), { ssr: false });
-const StickmanArcherGame = dynamic(() => import('@/components/Home/StickmanArcherGame'), { ssr: false });
 const CandyCrushGame = dynamic(() => import('@/components/Home/CandyCrushGame'), { ssr: false });
 
 export function Demo() {
