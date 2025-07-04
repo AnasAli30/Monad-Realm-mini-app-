@@ -21,33 +21,50 @@ export function Demo() {
     return <VerticalJumperGame />;
   }
 
-  // if (currentView === 'loading') {
-  //   return (
-  //     <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8 bg-gradient-to-br from-gray-50 via-white to-gray-100">
-  //       <div className="text-center space-y-6">
-  //         <h1 className="text-4xl font-bold text-gray-800 mb-8">Monad Jump</h1>
-  //         <p className="text-xl text-gray-600 mb-8">Loading game...</p>
+  if (currentView === 'loading') {
+    return (
+      <div style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: 0, 
+        width: '100vw', 
+        height: '100vh', 
+        background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f3f4f6 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2000
+      }}>
+        <div style={{ textAlign: 'center', color: '#374151' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Monad Jump</h1>
+          <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>Initializing game...</p>
           
-  //         {/* Spinner Loader */}
-  //         <div className="flex justify-center mb-8">
-  //           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
-  //         </div>
           
-  //         {/* Progress Bar */}
-  //         <div className="w-80 bg-gray-200 rounded-full h-2 mx-auto">
-  //           <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full animate-pulse" style={{width: '100%'}}></div>
-  //         </div>
           
-  //         {/* Loading Messages */}
-  //         <div className="space-y-2">
-  //           <p className="text-gray-500 animate-pulse">Initializing game engine...</p>
-  //           <p className="text-gray-500 animate-pulse">Loading assets...</p>
-  //           <p className="text-gray-500 animate-pulse">Preparing platforms...</p>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+          {/* Progress Bar */}
+          <div style={{ 
+            width: '320px', 
+            height: '8px', 
+            backgroundColor: '#e5e7eb',
+            borderRadius: '4px',
+            margin: '0 auto 2rem',
+            overflow: 'hidden'
+          }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+              borderRadius: '4px',
+              animation: 'pulse 2s ease-in-out infinite'
+            }}></div>
+          </div>
+          
+          <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Loading assets and preparing game...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (currentView === 'singlePlayer') {
     return (
