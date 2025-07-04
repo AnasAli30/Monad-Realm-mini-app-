@@ -5,20 +5,50 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 const VerticalJumperGame = dynamic(() => import('@/components/Home/VerticalJumperGame'), { ssr: false });
+const StickmanArcherGame = dynamic(() => import('@/components/Home/StickmanArcherGame'), { ssr: false });
+const CandyCrushGame = dynamic(() => import('@/components/Home/CandyCrushGame'), { ssr: false });
 
 export function Demo() {
-  const [currentView, setCurrentView] = useState<'menu' | 'singlePlayer' | 'loading' | 'game'>('menu');
+  const [currentView, setCurrentView] = useState<'menu' | 'singlePlayer' | 'loading' | 'jumpGame' | 'archerGame' | 'candyGame'>('menu');
+  const [loadingGameType, setLoadingGameType] = useState<'jump' | 'archer' | 'candy'>('jump');
 
-  const handleStartGame = () => {
+  const handleStartJumpGame = () => {
+    setLoadingGameType('jump');
     setCurrentView('loading');
     // Simulate game loading time
     setTimeout(() => {
-      setCurrentView('game');
+      setCurrentView('jumpGame');
     }, 2000); // 2 seconds loading time
   };
 
-  if (currentView === 'game') {
+  const handleStartArcherGame = () => {
+    setLoadingGameType('archer');
+    setCurrentView('loading');
+    // Simulate game loading time
+    setTimeout(() => {
+      setCurrentView('archerGame');
+    }, 2000); // 2 seconds loading time
+  };
+
+  const handleStartCandyGame = () => {
+    setLoadingGameType('candy');
+    setCurrentView('loading');
+    // Simulate game loading time
+    setTimeout(() => {
+      setCurrentView('candyGame');
+    }, 2000); // 2 seconds loading time
+  };
+
+  if (currentView === 'jumpGame') {
     return <VerticalJumperGame />;
+  }
+
+  if (currentView === 'archerGame') {
+    return <StickmanArcherGame />;
+  }
+
+  if (currentView === 'candyGame') {
+    return <CandyCrushGame />;
   }
 
   if (currentView === 'loading') {
@@ -37,8 +67,12 @@ export function Demo() {
         zIndex: 2000
       }}>
         <div style={{ textAlign: 'center', color: '#374151' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Monad Jump</h1>
-          <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>Initializing game...</p>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            {loadingGameType === 'jump' ? 'Monad Jump' : loadingGameType === 'archer' ? 'Stickman Archer' : 'Candy Crush'}
+          </h1>
+          <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
+            {loadingGameType === 'jump' ? 'Initializing jumping game...' : loadingGameType === 'archer' ? 'Preparing your bow and arrows...' : 'Loading sweet candies...'}
+          </p>
           
           
           
@@ -74,11 +108,25 @@ export function Demo() {
           
           <div className="space-y-4">
             <button
-              onClick={handleStartGame}
+              onClick={handleStartJumpGame}
               className="w-64 px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
             >
               🎮 Monad Jump
             </button>
+            
+            <button
+              onClick={handleStartCandyGame}
+              className="w-64 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              🍭 Candy Crush
+            </button>
+            
+            {/* <button
+              onClick={handleStartArcherGame}
+              className="w-64 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              🏹 Stickman Archer
+            </button> */}
           </div>
           
           <button
