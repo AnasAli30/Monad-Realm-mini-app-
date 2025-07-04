@@ -2,9 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
+import { APP_URL } from '@/lib/constants';
+import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 
 export default function CandyCrushGame() {
   const gameRef = useRef<HTMLDivElement>(null);
+  const [gameInitialized, setGameInitialized] = useState(false);
+  const [gameOverState, setGameOverState] = useState(false); // Track game over for blur effect
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
@@ -16,7 +20,9 @@ export default function CandyCrushGame() {
   const [challengeProgress, setChallengeProgress] = useState(0);
 
   const handleRestart = () => {
+    setGameInitialized(false);
     setGameOver(false);
+    setGameOverState(false); // Reset blur state
     setScore(0);
     setLevel(1);
     setMoves(10);
@@ -43,6 +49,7 @@ export default function CandyCrushGame() {
 
   useEffect(() => {
     if (gameRef.current) {
+      setGameInitialized(false);
       initGame();
     }
     return () => {
@@ -322,6 +329,9 @@ export default function CandyCrushGame() {
       console.log('✅ Game initialized and stable');
       console.log(`🎯 Level ${gameLevel} Challenge: Match ${gameChallengeTarget} candies of type ${gameChallengeCandy}`);
       updateUI();
+      
+      // Mark game as fully initialized
+      setTimeout(() => setGameInitialized(true), 100); // Small delay to ensure rendering
     }
 
     // Touch/drag variables
@@ -734,6 +744,7 @@ export default function CandyCrushGame() {
         
         if (gameMoves <= 0) {
           setGameOver(true);
+          setGameOverState(true); // Set blur state
         }
       }
     }
@@ -1126,6 +1137,7 @@ export default function CandyCrushGame() {
 
     new Phaser.Game(config);
   };
+  const { context, actions } = useMiniAppContext();
 
   return (
     <div style={{ 
@@ -1135,75 +1147,194 @@ export default function CandyCrushGame() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f0f8ff'
+      background: gameInitialized ? '#f0f8ff' : 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)'
     }}>
-      <div ref={gameRef} style={{ 
-        width: '100%', 
-        height: '800px',
-        maxWidth: '100vw',
-        maxHeight: '100vh'
-      }} />
-      
-
-
-      {gameOver && (
+      {/* Candy background during initialization */}
+      {!gameInitialized && (
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1000
         }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '1.5rem',
-            borderRadius: '10px',
-            textAlign: 'center',
-            maxWidth: '90vw',
-            margin: '0 1rem'
-          }}>
-            <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>🍭 Game Over!</h2>
-            <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}>Final Score: {score}</p>
-            <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}>Level: {level}</p>
-            <p style={{ margin: '0.5rem 0', fontSize: '1rem' }}> {challengeCandyType} ({challengeProgress}/{challengeTarget})</p>
-            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <button 
-                onClick={handleRestart} 
-                style={{ 
-                  padding: '0.75rem 1.5rem', 
-                  fontSize: '1rem',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-                }}
-              >
-                🔄 Play Again
-              </button>
-              <button 
-                onClick={handleBackToMenu} 
-                style={{ 
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '1rem',
-                  backgroundColor: '#666',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-                }}
-              >
-                🏠 Menu
-              </button>
-            </div>
-          </div>
+          <img
+            src="/candy/molandakita.png"
+            alt="Moland"
+            style={{
+              width: '80px',
+              height: '80px',
+              animation: 'spin 2s linear infinite'
+            }}
+          />
         </div>
       )}
+      
+      <div ref={gameRef} style={{ 
+        width: '100%', 
+        height: '800px',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        opacity: gameInitialized ? 1 : 0,
+        filter: gameOverState ? 'blur(5px)' : 'none',
+        transition: 'opacity 0.3s ease, filter 0.5s ease'
+      }} />
+      
+
+
+      {gameOver && (
+        <>
+          {/* Back to Games Button - Top Left */}
+          <button
+            style={{
+              position: 'fixed',
+              top: '30px',
+              left: '0px',
+              zIndex: 2100,
+              padding: '8px 16px',
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: 'black',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              pointerEvents: 'auto'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            onClick={handleBackToMenu}
+          >
+            ◀ Games
+          </button>
+          
+          {/* Game Over Content */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 2000,
+            pointerEvents: 'none' // Allow clicks to pass through except for button
+          }}>
+            {/* Game Over Text */}
+            <h1 style={{
+              fontSize: '50px',
+              fontWeight: 'bold',
+              color: '#ffffff',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 20px 0',
+              textAlign: 'center'
+            }}>
+              GAME OVER
+            </h1>
+            
+            {/* Current Score */}
+            <div style={{
+              fontSize: '28px',
+              fontWeight: 'bold',
+              border: '1px solid #ffffff',
+              padding: '10px 18px',
+              borderRadius: '10px',
+              color: '#ffffff',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              margin: '0 0 10px 0',
+              backgroundColor: 'transparent',
+              textAlign: 'center',
+              cursor: 'pointer',
+              zIndex: 2001,
+              pointerEvents: 'auto'
+            }} onClick={async () => {
+              try {
+                // Create share text with embed link
+                const shareText = `🎮 Just scored ${score} and level ${level} in Monad Realm! 🚀\n\nCan you beat my score? Play now`;
+                
+                console.log('Actions available:', !!actions);
+                console.log('Context available:', !!context);
+                
+                if (actions && actions.composeCast) {
+                  await actions.composeCast({
+                    text: shareText,
+                    embeds: [`${APP_URL}`],
+                  });
+                  console.log('Cast composed successfully');
+                } 
+              } catch (error) {
+                console.error('Error sharing score:', error);
+               
+               
+              }}}>
+              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '6px'}}>Cast Score</p>
+              {score}
+              <div style={{
+                width: '100%',
+                height: '2px',
+                backgroundColor: '#ffffff',
+                opacity: '0.7',
+                margin: '10px 0'
+              }}></div>
+              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '1px'}}>Level {level}</p>
+            </div>
+            
+           
+          </div>
+          
+          {/* Play Again Button - Bottom Center */}
+          <button
+            style={{ 
+              position: 'fixed', 
+              bottom: '80px', 
+              left: '50%', 
+              transform: 'translateX(-50%)',
+              zIndex: 2000,
+              padding: '10px 40px',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+              transition: 'all 0.5s ease',
+              pointerEvents: 'auto' // Enable clicks for button
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#45a049';
+              e.currentTarget.style.transform = 'translateX(-50%) scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#4CAF50';
+              e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
+            }}
+            onClick={handleRestart}
+          >
+            ▶ Play Again 
+          </button>
+        </>
+      )}
+      
+      {/* Add CSS animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 } 

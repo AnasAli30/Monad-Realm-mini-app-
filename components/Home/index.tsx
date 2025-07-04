@@ -49,6 +49,96 @@ export function Demo() {
   }
 
   if (currentView === 'loading') {
+    // Candy-themed loading screen
+    if (loadingGameType === 'candy') {
+      return (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{ textAlign: 'center', color: '#ffffff' }}>
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+              MonaCrush
+            </h1>
+            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#fff' }}>
+              Preparing your Moland adventure...
+            </p>
+            
+            {/* Moland Loading Animation */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              gap: '15px',
+              marginBottom: '2rem'
+            }}>
+              {Array.from({ length: 6 }, (_, index) => (
+                <img
+                  key={index}
+                  src="/candy/molandakita.png"
+                  alt="Moland"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    animation: `bounce 1.5s ease-in-out ${index * 0.2}s infinite`
+                  }}
+                />
+              ))}
+            </div>
+            
+            {/* Progress Bar */}
+            <div style={{ 
+              width: '320px', 
+              height: '8px', 
+              backgroundColor: 'rgba(255,255,255,0.3)',
+              borderRadius: '4px',
+              margin: '0 auto 2rem',
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                background: 'linear-gradient(90deg, #ffffff 0%, #ffeb3b 100%)',
+                borderRadius: '4px',
+                animation: 'pulse 2s ease-in-out infinite'
+              }}></div>
+            </div>
+            
+            <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>Loading Moland and preparing challenges...</p>
+          </div>
+          
+          {/* Add CSS animations */}
+          <style jsx>{`
+            @keyframes bounce {
+              0%, 20%, 50%, 80%, 100% { 
+                transform: translateY(0); 
+              }
+              40% { 
+                transform: translateY(-10px); 
+              }
+              60% { 
+                transform: translateY(-5px); 
+              }
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}</style>
+        </div>
+      );
+    }
+    
+    // Default loading screen for other games
     return (
       <div style={{ 
         position: 'fixed', 
@@ -65,13 +155,11 @@ export function Demo() {
       }}>
         <div style={{ textAlign: 'center', color: '#374151' }}>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            {loadingGameType === 'jump' ? 'Monad Jump' : loadingGameType === 'archer' ? 'Stickman Archer' : 'Candy Crush'}
+            {loadingGameType === 'jump' ? 'Monad Jump' : loadingGameType === 'archer' ? 'Stickman Archer' : 'Game'}
           </h1>
           <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
-            {loadingGameType === 'jump' ? 'Initializing jumping game...' : loadingGameType === 'archer' ? 'Preparing your bow and arrows...' : 'Loading sweet candies...'}
+            {loadingGameType === 'jump' ? 'Initializing jumping game...' : loadingGameType === 'archer' ? 'Preparing your bow and arrows...' : 'Loading game...'}
           </p>
-          
-          
           
           {/* Progress Bar */}
           <div style={{ 
@@ -115,7 +203,7 @@ export function Demo() {
               onClick={handleStartCandyGame}
               className="w-64 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
             >
-              🍭 Candy Crush
+               MonaCrush
             </button>
             
             {/* <button
