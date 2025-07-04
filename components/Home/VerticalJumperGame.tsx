@@ -129,17 +129,12 @@ export default function VerticalJumperGame() {
       this.load.image('platform', '/images/jump/game-tiles.png');
       this.load.image('destructive', '/images/jump/game-tiles-destructive.png');
       this.load.image('invisible', '/images/jump/game-tiles-invisible.png');
-      // this.load.image('cloud', '/images/cloud.png');
       this.load.image('enemy', '/images/jump/enemy.png');
       this.load.image('ball', '/images/jump/Parsnip.png');
       this.load.image('ball2', '/images/jump/parsnip1.png');
       this.load.image('sparkle', '/images/jump/sparkle.png');
-      // this.load.image('playerSprite', 'images/player.png');
       this.load.spritesheet('playerAnims', 'images/jump/player.png', { frameWidth: 72, frameHeight: 90 });
       this.load.spritesheet('playerLeftAnims', 'images/jump/player_left.png', { frameWidth: 72, frameHeight: 90 });
-      // this.load.image('playerJumpSprite', 'images/player_jump.png');
-      // this.load.image('playerLeftSprite', 'images/player_left_jump.png');
-      // this.load.image('playerRightSprite', 'images/player_right_jump.png');
       this.load.spritesheet('enemyAnims', 'images/jump/enemy.png', { frameWidth: 161, frameHeight: 95 });
       this.load.image('enemy2', 'images/jump/enemy2.gif');
       this.load.audio('bgdMusic', '/assets/bgdMusic.mp3');

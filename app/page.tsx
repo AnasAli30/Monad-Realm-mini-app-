@@ -6,7 +6,7 @@ const frame = {
   version: 'next',
   imageUrl: `${APP_URL}/images/feed.png`,
   button: {
-    title: 'Launch Template',
+    title: 'Play',
     action: {
       type: 'launch_frame',
       name: 'Monad Realm',
