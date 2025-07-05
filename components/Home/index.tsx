@@ -6,10 +6,11 @@ import { useState } from 'react';
 
 const VerticalJumperGame = dynamic(() => import('@/components/Home/VerticalJumperGame'), { ssr: false });
 const CandyCrushGame = dynamic(() => import('@/components/Home/CandyCrushGame'), { ssr: false });
+const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGame'), { ssr: false });
 
 export function Demo() {
-  const [currentView, setCurrentView] = useState<'menu' | 'singlePlayer' | 'loading' | 'jumpGame' | 'archerGame' | 'candyGame'>('menu');
-  const [loadingGameType, setLoadingGameType] = useState<'jump' | 'archer' | 'candy'>('jump');
+  const [currentView, setCurrentView] = useState<'menu' | 'singlePlayer' | 'loading' | 'jumpGame' | 'archerGame' | 'candyGame' | 'stoneShooterGame'>('menu');
+  const [loadingGameType, setLoadingGameType] = useState<'jump' | 'archer' | 'candy' | 'stoneShooter'>('jump');
 
   const handleStartJumpGame = () => {
     setLoadingGameType('jump');
@@ -38,11 +39,22 @@ export function Demo() {
     }, 2000); // 2 seconds loading time
   };
 
+  const handleStartStoneShooterGame = () => {
+    setLoadingGameType('stoneShooter');
+    setCurrentView('loading');
+    // Simulate game loading time
+    setTimeout(() => {
+      setCurrentView('stoneShooterGame');
+    }, 2000); // 2 seconds loading time
+  };
+
   if (currentView === 'jumpGame') {
     return <VerticalJumperGame />;
   }
 
-
+  if (currentView === 'stoneShooterGame') {
+    return <StoneShooterGame />;
+  }
 
   if (currentView === 'candyGame') {
     return <CandyCrushGame />;
@@ -155,10 +167,14 @@ export function Demo() {
       }}>
         <div style={{ textAlign: 'center', color: '#374151' }}>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            {loadingGameType === 'jump' ? 'Monad Jump' : loadingGameType === 'archer' ? 'Stickman Archer' : 'Game'}
+            {loadingGameType === 'jump' ? 'Monad Jump' : 
+             loadingGameType === 'archer' ? 'Stickman Archer' : 
+             loadingGameType === 'stoneShooter' ? 'Stone Shooter' : 'Game'}
           </h1>
           <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
-            {loadingGameType === 'jump' ? 'Initializing jumping game...' : loadingGameType === 'archer' ? 'Preparing your bow and arrows...' : 'Loading game...'}
+            {loadingGameType === 'jump' ? 'Initializing jumping game...' : 
+             loadingGameType === 'archer' ? 'Preparing your bow and arrows...' : 
+             loadingGameType === 'stoneShooter' ? 'Loading weapons and targets...' : 'Loading game...'}
           </p>
           
           {/* Progress Bar */}
@@ -204,6 +220,13 @@ export function Demo() {
               className="w-64 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
             >
                MonaCrush
+            </button>
+            
+            <button
+              onClick={handleStartStoneShooterGame}
+              className="w-64 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+            >
+              🎯 Stone Shooter
             </button>
             
             {/* <button

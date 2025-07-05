@@ -13,8 +13,34 @@ export default function VerticalJumperGame() {
   const [gameKey, setGameKey] = useState(0); // for remounting Phaser game
   const [gameReady, setGameReady] = useState(false); // Track if game is ready
   const [gameOver, setGameOver] = useState(false); // Track game over state for blur effect
-  const [gameOverData, setGameOverData] = useState({ score: 0, time: '00:00', bestScore: 0 }); // Game over data
+  const [gameOverData, setGameOverData] = useState({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Game over data
+  const [animatedScore, setAnimatedScore] = useState(0);
   const tiltXRef = useRef(0);
+
+  // Score counting animation
+  useEffect(() => {
+    if (gameOverData.score > 0 && gameOver) {
+      setAnimatedScore(0);
+      const targetScore = gameOverData.score;
+      const duration = 2000; // 2 seconds animation
+      const steps = 60; // 60 steps for smooth animation
+      const increment = targetScore / steps;
+      const stepDuration = duration / steps;
+      
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        if (currentStep >= steps) {
+          setAnimatedScore(targetScore);
+          clearInterval(timer);
+        } else {
+          setAnimatedScore(Math.floor(increment * currentStep));
+        }
+      }, stepDuration);
+      
+      return () => clearInterval(timer);
+    }
+  }, [gameOverData.score, gameOver]);
 
   useEffect(() => {
     // Device orientation event handler
@@ -56,7 +82,8 @@ export default function VerticalJumperGame() {
     setShowRestartBtn(false);
     setGameReady(false); // Reset game ready state
     setGameOver(false); // Reset game over state
-    setGameOverData({ score: 0, time: '00:00', bestScore: 0 }); // Reset game over data
+    setGameOverData({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Reset game over data
+    setAnimatedScore(0);
     phaserGameRef.current?.destroy(true);
     phaserGameRef.current = null;
     setGameKey((k) => k + 1); // trigger remount
@@ -512,7 +539,8 @@ export default function VerticalJumperGame() {
         setGameOverData({
           score: displayScore,
           time: formattedTime,
-          bestScore: maxScore
+          bestScore: Math.max(displayScore, maxScore),
+          previousBestScore: maxScore
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
@@ -1191,7 +1219,8 @@ export default function VerticalJumperGame() {
         setGameOverData({
           score: displayScore,
           time: formattedTime,
-          bestScore: maxScore
+          bestScore: Math.max(displayScore, maxScore),
+          previousBestScore: maxScore
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
@@ -1380,53 +1409,57 @@ export default function VerticalJumperGame() {
             </h1>
                {/* Current Score */}
                <button style={{
-              fontSize: '28px',
+              fontSize: '40px',
               fontWeight: 'bold',
-              border: '1px solid #ffffff',
-              padding: '10px 18px',
+              border: '2px solid #ffffff',
+              padding: '15px 25px',
               borderRadius: '10px',
               color: '#ffffff',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 10px 0',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              margin: '0 0 15px 0',
               cursor: 'pointer',
               zIndex: 2001,
-              pointerEvents: 'auto',
-              backgroundColor: 'transparent'
-              
+              pointerEvents: 'auto'
             }} onClick={async () => {
               try {
-                // Create share text with embed link
-                const shareText = `🎮 Just scored ${gameOverData.score} in just ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Monad Realm! 🚀\n\nCan you beat my score? Play now`;
+                const improvementText = gameOverData.score > gameOverData.previousBestScore && gameOverData.previousBestScore > 0 
+                  ? `\n\n🔥 That's +${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% improvement from my Highest Score!`
+                  : '';
                 
-                console.log('Actions available:', !!actions);
-                console.log('Context available:', !!context);
+                const shareText = `🎮 Just scored ${gameOverData.score} points in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Monad Jump! 🚀${improvementText}\n\nCan you beat my score?`;
                 
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
                     embeds: [`${APP_URL}`],
                   });
-                  console.log('Cast composed successfully');
                 } 
               } catch (error) {
                 console.error('Error sharing score:', error);
-                // Final fallback
-                const fullText = `🎮 Just scored ${gameOverData.score} points in Monad Realm! 🚀\n\nCan you beat my score? Play now\n\n${APP_URL}`;
-               
               }
             }}>
-              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '6px'}}>Cast my score</p>
-               {gameOverData.score}
-           <div style={{
-            width: '100%',
-            height: '2px',
-            backgroundColor: '#ffffff',
-            opacity: '0.7',
-            margin: '10px 0'
-           }}> </div>
-               <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '1px'}}>{gameOverData.time.split(':')[0]}m {gameOverData.time.split(':')[1]}s</p>
-        
-         
+              <div style={{fontSize: '14px', marginBottom: '5px'}}>Cast my score</div>
+              <div>{animatedScore}</div>
+              {gameOverData.score > gameOverData.previousBestScore && gameOverData.previousBestScore > 0 && (
+                <div style={{
+                  fontSize: '11px',
+                  color: '#00ff00',
+                  fontWeight: 'bold',
+                  marginTop: '3px'
+                }}>
+                  +{Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% from best
+                </div>
+              )}
+              <div style={{
+                width: '100%',
+                height: '1px',
+                backgroundColor: '#ffffff',
+                margin: '8px 0'
+              }}></div>
+              <div style={{fontSize: '12px'}}>
+                {gameOverData.time.split(':')[0]}m {gameOverData.time.split(':')[1]}s
+              </div>
             </button>
             
             {/* Timer */}
@@ -1436,18 +1469,17 @@ export default function VerticalJumperGame() {
             
             {/* Best Score */}
             <div style={{
-              fontSize: '22px',
+              fontSize: '13px',
+              color: '#ffff00',
               fontWeight: 'bold',
-              color: '#ffffff',
-              border: '1px solid #ffffff',
-              padding: '1px 10px',
-              borderRadius: '10px',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 30px 0'
-
-
+              border: '1px solid #ffff00',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              margin: '0 0 20px 0',
+              textAlign: 'center'
             }}>
-              Best: {gameOverData.bestScore}
+              Best
+              <p style={{ fontSize: '29px', fontWeight: 'bold', color: '#ffff00', margin: '3px 0 0 0' }}>{gameOverData.bestScore}</p>
             </div>
           </div>
         </>
@@ -1461,8 +1493,8 @@ export default function VerticalJumperGame() {
             left: '50%', 
             transform: 'translateX(-50%)',
             zIndex: 2000,
-            padding: '10px 40px',
-            fontSize: '18px',
+            padding: '10px 20px',
+            fontSize: '20px',
             fontWeight: 'bold',
             backgroundColor: '#4CAF50',
             color: 'white',

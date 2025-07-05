@@ -6,6 +6,7 @@ import { APP_URL } from '@/lib/constants';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 
 export default function CandyCrushGame() {
+  const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const [gameInitialized, setGameInitialized] = useState(false);
   const [gameOverState, setGameOverState] = useState(false); // Track game over for blur effect
@@ -13,11 +14,38 @@ export default function CandyCrushGame() {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [moves, setMoves] = useState(10);
+  const [animatedScore, setAnimatedScore] = useState(0);
+  const [previousBestScore, setPreviousBestScore] = useState(0);
   
   // Challenge system state
   const [challengeCandyType, setChallengeCandyType] = useState('1');
   const [challengeTarget, setChallengeTarget] = useState(10);
   const [challengeProgress, setChallengeProgress] = useState(0);
+
+  // Score counting animation
+  useEffect(() => {
+    if (score > 0 && gameOver) {
+      setAnimatedScore(0);
+      const targetScore = score;
+      const duration = 2000; // 2 seconds animation
+      const steps = 60; // 60 steps for smooth animation
+      const increment = targetScore / steps;
+      const stepDuration = duration / steps;
+      
+      let currentStep = 0;
+      const timer = setInterval(() => {
+        currentStep++;
+        if (currentStep >= steps) {
+          setAnimatedScore(targetScore);
+          clearInterval(timer);
+        } else {
+          setAnimatedScore(Math.floor(increment * currentStep));
+        }
+      }, stepDuration);
+      
+      return () => clearInterval(timer);
+    }
+  }, [score, gameOver]);
 
   const handleRestart = () => {
     setGameInitialized(false);
@@ -29,6 +57,8 @@ export default function CandyCrushGame() {
     setChallengeCandyType('1');
     setChallengeTarget(10);
     setChallengeProgress(0);
+    setAnimatedScore(0);
+    setPreviousBestScore(0);
     
     if (gameRef.current) {
       const existingGame = gameRef.current.querySelector('canvas');
@@ -743,6 +773,15 @@ export default function CandyCrushGame() {
         updateUI(); // Update status
         
         if (gameMoves <= 0) {
+          // Store previous best score before updating
+          const currentBest = parseInt(localStorage.getItem('candyBestScore') || '0');
+          setPreviousBestScore(currentBest);
+          
+          // Update best score if current score is better
+          if (gameScore > currentBest) {
+            localStorage.setItem('candyBestScore', gameScore.toString());
+          }
+          
           setGameOver(true);
           setGameOverState(true); // Set blur state
         }
@@ -1137,7 +1176,6 @@ export default function CandyCrushGame() {
 
     new Phaser.Game(config);
   };
-  const { context, actions } = useMiniAppContext();
 
   return (
     <div style={{ 
@@ -1244,50 +1282,73 @@ export default function CandyCrushGame() {
             </h1>
             
             {/* Current Score */}
-            <div style={{
-              fontSize: '28px',
+            <button style={{
+              fontSize: '40px',
               fontWeight: 'bold',
-              border: '1px solid #ffffff',
-              padding: '10px 18px',
+              border: '2px solid #ffffff',
+              padding: '15px 25px',
               borderRadius: '10px',
               color: '#ffffff',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 10px 0',
-              backgroundColor: 'transparent',
-              textAlign: 'center',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              margin: '0 0 15px 0',
               cursor: 'pointer',
               zIndex: 2001,
               pointerEvents: 'auto'
             }} onClick={async () => {
               try {
-                // Create share text with embed link
-                const shareText = `🎮 Just scored ${score} and level ${level} in Monad Realm! 🚀\n\nCan you beat my score? Play now`;
+                const improvementText = score > previousBestScore && previousBestScore > 0 
+                  ? `\n\n🔥 That's +${Math.round(((score - previousBestScore) / previousBestScore) * 100)}% improvement from my Highest Score!`
+                  : '';
                 
-                console.log('Actions available:', !!actions);
-                console.log('Context available:', !!context);
+                const shareText = `🍭 Just scored ${score} points and reached level ${level} in Candy Crush! 💥\n\nCan you beat my score?${improvementText}`;
                 
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
                     embeds: [`${APP_URL}`],
                   });
-                  console.log('Cast composed successfully');
                 } 
               } catch (error) {
                 console.error('Error sharing score:', error);
-               
-               
-              }}}>
-              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '6px'}}>Cast Score</p>
-              {score}
+              }
+            }}>
+              <div style={{fontSize: '14px', marginBottom: '5px'}}>Cast my score</div>
+              <div>{animatedScore}</div>
+              {score > previousBestScore && previousBestScore > 0 && (
+                <div style={{
+                  fontSize: '11px',
+                  color: '#00ff00',
+                  fontWeight: 'bold',
+                  marginTop: '3px'
+                }}>
+                  +{Math.round(((score - previousBestScore) / previousBestScore) * 100)}% from best
+                </div>
+              )}
               <div style={{
                 width: '100%',
-                height: '2px',
+                height: '1px',
                 backgroundColor: '#ffffff',
-                opacity: '0.7',
-                margin: '10px 0'
+                margin: '8px 0'
               }}></div>
-              <p style={{color: 'white',fontSize: '14px',fontWeight: 'bold',marginBottom: '1px'}}>Level {level}</p>
+              <div style={{fontSize: '12px'}}>
+                Level {level}
+              </div>
+            </button>
+            
+            {/* Best Score */}
+            <div style={{
+              fontSize: '13px',
+              color: '#ffff00',
+              fontWeight: 'bold',
+              border: '1px solid #ffff00',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              margin: '0 0 20px 0',
+              textAlign: 'center'
+            }}>
+              Best
+              <p style={{ fontSize: '29px', fontWeight: 'bold', color: '#ffff00' }}>{Math.max(score, previousBestScore)}</p>
             </div>
             
            
@@ -1302,7 +1363,7 @@ export default function CandyCrushGame() {
               transform: 'translateX(-50%)',
               zIndex: 2000,
               padding: '10px 40px',
-              fontSize: '18px',
+              fontSize: '40px',
               fontWeight: 'bold',
               backgroundColor: '#4CAF50',
               color: 'white',
