@@ -247,11 +247,11 @@ export default function CandyCrushGame() {
       const centerX = screenWidth / 2;
       const progressBarWidth = Math.min(screenWidth - 40, 300); // Responsive progress bar width
       
-      scoreText = this.add.text(20, 10, 'Score: 0', { fontSize: '20px', color: 'black',fontWeight: 'bold' });
-      movesText = this.add.text(screenWidth - 20, 10, 'Moves:10', { fontSize: '20px', color: 'black',fontWeight: 'bold' }).setOrigin(1, 0);
+      scoreText = this.add.text(20, 10, 'Score: 0', { fontSize: '20px', color: 'black', fontStyle: 'bold' });
+      movesText = this.add.text(screenWidth - 20, 10, 'Moves:10', { fontSize: '20px', color: 'black', fontStyle: 'bold' }).setOrigin(1, 0);
       
       // Level text above progress bar
-      levelText = this.add.text(centerX, 40, 'Level: 1', { fontSize: '20px', color: 'black',fontWeight: 'bold' }).setOrigin(0.5, 0);
+      levelText = this.add.text(centerX, 40, 'Level: 1', { fontSize: '20px', color: 'black', fontStyle: 'bold' }).setOrigin(0.5, 0);
       
       // Challenge display centered
      
@@ -268,7 +268,7 @@ export default function CandyCrushGame() {
             // Challenge text below progress bar
         challengeIcon = this.add.sprite(centerX - 40, 102, 'candy-' + gameChallengeCandy);
        challengeIcon.setDisplaySize(35,35); // Small icon size
-        challengeText = this.add.text(centerX + 10, 100, '(0/10)', { fontSize: '17px', color: 'black',fontWeight: 'bold' }).setOrigin(0.5, 0);
+        challengeText = this.add.text(centerX + 10, 100, '(0/10)', { fontSize: '17px', color: 'black', fontStyle: 'bold' }).setOrigin(0.5, 0);
       
     
       
