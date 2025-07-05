@@ -6,17 +6,23 @@ import { APP_URL } from '@/lib/constants';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
 export default function VerticalJumperGame() {
+  const componentStartTime = performance.now();
+  console.log('🎮 [MONAD JUMP] Component initializing at:', componentStartTime);
+  
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [showPermissionBtn, setShowPermissionBtn] = useState(false);
   const [showRestartBtn, setShowRestartBtn] = useState(false);
   const [gameKey, setGameKey] = useState(0); // for remounting Phaser game
-  const [gameReady, setGameReady] = useState(false); // Track if game is ready
+  const [gameLoading, setGameLoading] = useState(true); // Track loading state
+  
   const [gameOver, setGameOver] = useState(false); // Track game over state for blur effect
   const [gameOverData, setGameOverData] = useState({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Game over data
   const [animatedScore, setAnimatedScore] = useState(0);
   const tiltXRef = useRef(0);
+  
+  console.log('🎮 [MONAD JUMP] Component state initialized, gameKey:', gameKey);
 
   // Score counting animation
   useEffect(() => {
@@ -81,18 +87,30 @@ export default function VerticalJumperGame() {
   // Restart game handler (no reload)
   const handleRestart = () => {
     setShowRestartBtn(false);
-    setGameReady(false); // Reset game ready state
     setGameOver(false); // Reset game over state
     setGameOverData({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Reset game over data
     setAnimatedScore(0);
+    setGameLoading(true); // Show loading screen again
     phaserGameRef.current?.destroy(true);
     phaserGameRef.current = null;
     setGameKey((k) => k + 1); // trigger remount
   };
 
   useEffect(() => {
-    if (!gameRef.current) return;
-    if (phaserGameRef.current) return;
+    console.log('🔄 [MONAD JUMP] useEffect triggered, gameKey:', gameKey);
+    console.log('🔄 [MONAD JUMP] gameRef.current:', !!gameRef.current);
+    console.log('🔄 [MONAD JUMP] phaserGameRef.current:', !!phaserGameRef.current);
+    
+    if (!gameRef.current) {
+      console.log('❌ [MONAD JUMP] No gameRef, returning early');
+      return;
+    }
+    if (phaserGameRef.current) {
+      console.log('❌ [MONAD JUMP] Phaser game already exists, returning early');
+      return;
+    }
+    
+    console.log('✅ [MONAD JUMP] Starting Phaser game initialization...');
 
     let player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     let platforms: Phaser.Physics.Arcade.StaticGroup;
@@ -160,6 +178,8 @@ export default function VerticalJumperGame() {
     let gameOverOverlay: Phaser.GameObjects.Graphics;
 
     function preload(this: Phaser.Scene) {
+      console.log('📦 [MONAD JUMP] PRELOAD started - loading assets...');
+      
       this.load.image('background', '/images/jump/background.png');
       this.load.image('background1', '/images/jump/background1.png');
       this.load.image('background2', '/images/jump/background2.png');
@@ -179,9 +199,13 @@ export default function VerticalJumperGame() {
       this.load.audio('eatSound', '/assets/eatSound.mp3');
       this.load.audio('jumpSound', '/assets/jumpSound.mp3');
       this.load.audio('gameOverSound', '/assets/gameOverSound.mp3');
+      
+      console.log('📦 [MONAD JUMP] PRELOAD completed - all assets queued');
     }
 
     function create(this: Phaser.Scene) {
+      console.log('🎨 [MONAD JUMP] CREATE started - building game scene...');
+      
       // Remove previous bg logic, use tileSprite
       // Create background with smooth transitions
       const bg = this.add.tileSprite(0, 0, 640, window.innerHeight * 2, 'background').setOrigin(0, 0);
@@ -189,6 +213,8 @@ export default function VerticalJumperGame() {
       (this as any).bgTile = bg;
       (this as any).currentBgTexture = 'background';
       (this as any).bgTransitioning = false;
+      
+      console.log('🖼️ [MONAD JUMP] Background created');
       scoreText = this.add
         .text(130, 10, 'Score: 0', { fontSize: '32px', color: '#fff', fontStyle: 'bold' })
         .setScrollFactor(0)
@@ -301,15 +327,19 @@ export default function VerticalJumperGame() {
       
       // Start player idle animation after a short delay to ensure animation system is ready
       this.time.delayedCall(100, () => {
+        console.log('🏃 [MONAD JUMP] Starting player idle animation...');
         if (player && player.anims) {
           try {
             player.anims.play('playerIdle', true);
+            console.log('✅ [MONAD JUMP] Player idle animation started successfully');
           } catch (e) {
-            console.log('Player idle animation not ready yet');
+            console.log('❌ [MONAD JUMP] Player idle animation not ready yet:', e);
           }
         }
-        // Set game as ready after everything is initialized
-        setGameReady(true);
+        const totalTime = performance.now() - componentStartTime;
+        console.log('🎮 [MONAD JUMP] GAME FULLY READY AND PLAYABLE! 🚀');
+        console.log(`⏱️ [MONAD JUMP] TOTAL LOADING TIME: ${totalTime.toFixed(2)}ms`);
+        setGameLoading(false); // Hide loading screen when game is ready
       });
       
       // Custom sparkle effect
@@ -1290,11 +1320,13 @@ export default function VerticalJumperGame() {
       }
     }
 
+    console.log('⚙️ [MONAD JUMP] Creating Phaser config...');
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
       width: 640,
       height: window.innerHeight,
       parent: gameRef.current!,
+      backgroundColor: '#87CEEB', // Sky blue background - no more black screen!
       physics: {
         default: 'arcade',
         arcade: {
@@ -1312,7 +1344,26 @@ export default function VerticalJumperGame() {
       },
     };
 
+    console.log('🎮 [MONAD JUMP] Creating new Phaser.Game instance...');
+    const startTime = performance.now();
     phaserGameRef.current = new Phaser.Game(config);
+    const endTime = performance.now();
+    console.log(`⚡ [MONAD JUMP] Phaser.Game created in ${(endTime - startTime).toFixed(2)}ms`);
+
+    // Apply background color to canvas immediately
+    setTimeout(() => {
+      console.log('🎨 [MONAD JUMP] Looking for canvas element...');
+      const canvas = gameRef.current?.querySelector('canvas');
+      if (canvas) {
+        console.log('✅ [MONAD JUMP] Canvas found! Applying background color...');
+        canvas.style.backgroundColor = '#87CEEB';
+        console.log('🎨 [MONAD JUMP] Canvas background color applied');
+      } else {
+        console.log('❌ [MONAD JUMP] Canvas not found yet');
+      }
+    }, 0);
+
+   
 
     // Responsive resize
     function handleResize() {
@@ -1321,15 +1372,28 @@ export default function VerticalJumperGame() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      console.log('🧹 [MONAD JUMP] Cleaning up component...');
       window.removeEventListener('resize', handleResize);
       phaserGameRef.current?.destroy(true);
       phaserGameRef.current = null;
+      console.log('✅ [MONAD JUMP] Component cleanup completed');
     };
   }, [gameKey]);
 
+  console.log('🎬 [MONAD JUMP] Component rendering JSX...');
+  
   return (
     <>
-      {!gameReady && (
+      {showPermissionBtn && (
+        <button
+          style={{ position: 'absolute', top: 20, right: 20, zIndex: 2000 }}
+          onClick={requestOrientationPermission}
+        >
+          Enable Tilt Controls
+        </button>
+      )}
+      
+      {gameLoading && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
@@ -1344,10 +1408,12 @@ export default function VerticalJumperGame() {
           zIndex: 2000
         }}>
           <div style={{ textAlign: 'center', color: '#374151' }}>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Monad Jump</h1>
-            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>Initializing game...</p>
-            
-            
+            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+              Monad Jump
+            </h1>
+            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
+              Initializing jumping game...
+            </p>
             
             {/* Progress Bar */}
             <div style={{ 
@@ -1372,14 +1438,6 @@ export default function VerticalJumperGame() {
         </div>
       )}
       
-      {showPermissionBtn && (
-        <button
-          style={{ position: 'absolute', top: 20, right: 20, zIndex: 2000 }}
-          onClick={requestOrientationPermission}
-        >
-          Enable Tilt Controls
-        </button>
-      )}
       {gameOver && (
         <>
           {/* Back to Games Button - Top Left */}
@@ -1560,7 +1618,8 @@ export default function VerticalJumperGame() {
           left: 0, 
           zIndex: 1000,
           filter: gameOver ? 'blur(3px)' : 'none',
-          transition: 'filter 0.5s ease'
+          transition: 'filter 0.5s ease',
+          display: gameLoading ? 'none' : 'block' // Hide game container while loading
         }} 
       />
       
