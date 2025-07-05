@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { APP_URL } from '@/lib/constants';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
+import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
 export default function CandyCrushGame() {
   const { context, actions } = useMiniAppContext();
@@ -784,6 +785,20 @@ export default function CandyCrushGame() {
           
           setGameOver(true);
           setGameOverState(true); // Set blur state
+          
+          // Submit score to leaderboard
+          const playerData = getPlayerData(context);
+          submitScore(playerData.fid, playerData.username, playerData.pfpUrl, gameScore, 'Candy Crush', {
+            level: gameLevel
+          }).then(result => {
+            if (result.success) {
+              console.log('Score submitted successfully:', result.data);
+            } else {
+              console.log('Failed to submit score:', result.error);
+            }
+          }).catch(error => {
+            console.error('Error submitting score:', error);
+          });
         }
       }
     }

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
+import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
 export default function VerticalJumperGame() {
   const { context, actions } = useMiniAppContext();
@@ -544,6 +545,21 @@ export default function VerticalJumperGame() {
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
+        
+        // Submit score to leaderboard
+        const playerData = getPlayerData(context);
+        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, displayScore, 'Monad Jump', {
+          time: formattedTime
+        }).then(result => {
+          if (result.success) {
+            console.log('Score submitted successfully:', result.data);
+          } else {
+            console.log('Failed to submit score:', result.error);
+          }
+        }).catch(error => {
+          console.error('Error submitting score:', error);
+        });
+        
         player.body.allowGravity = true;
         player.setVelocityY(600);
         player.body.checkCollision.none = true;
@@ -1224,6 +1240,21 @@ export default function VerticalJumperGame() {
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
+        
+        // Submit score to leaderboard
+        const playerData = getPlayerData(context);
+        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, displayScore, 'Monad Jump', {
+          time: formattedTime
+        }).then(result => {
+          if (result.success) {
+            console.log('Score submitted successfully:', result.data);
+          } else {
+            console.log('Failed to submit score:', result.error);
+          }
+        }).catch(error => {
+          console.error('Error submitting score:', error);
+        });
+        
         player.anims.play('playerIdle', true);
         player.body.allowGravity = true;
         player.setVelocityY(600);

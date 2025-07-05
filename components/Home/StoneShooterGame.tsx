@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
+import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
 export default function StoneShooterGame() {
   const { context, actions } = useMiniAppContext();
@@ -593,6 +594,22 @@ export default function StoneShooterGame() {
         });
         setGameOver(true);
         setShowRestartBtn(true);
+        
+        // Submit score to leaderboard
+        const playerData = getPlayerData(context);
+        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Bounce Blaster', {
+          time: formattedTime,
+          stonesDestroyed,
+          playerHits
+        }).then(result => {
+          if (result.success) {
+            console.log('Score submitted successfully:', result.data);
+          } else {
+            console.log('Failed to submit score:', result.error);
+          }
+        }).catch(error => {
+          console.error('Error submitting score:', error);
+        });
         
         // Play game over sound with proper scene reference
         try {
