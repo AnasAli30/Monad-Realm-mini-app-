@@ -190,7 +190,7 @@ export default function VerticalJumperGame() {
       this.load.image('enemy', '/images/jump/enemy.png');
       this.load.image('ball', '/images/jump/Parsnip.png');
       this.load.image('ball2', '/images/jump/parsnip1.png');
-      this.load.image('sparkle', '/images/jump/sparkle.png');
+      this.load.image('sparkle', '/images/jump/parsnip1.png');
       this.load.spritesheet('playerAnims', 'images/jump/player.png', { frameWidth: 72, frameHeight: 90 });
       this.load.spritesheet('playerLeftAnims', 'images/jump/player_left.png', { frameWidth: 72, frameHeight: 90 });
       this.load.spritesheet('enemyAnims', 'images/jump/enemy.png', { frameWidth: 161, frameHeight: 95 });
@@ -1400,7 +1400,7 @@ export default function VerticalJumperGame() {
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f3f4f6 100%)',
+          background: '#46a6ce',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -1408,33 +1408,39 @@ export default function VerticalJumperGame() {
           zIndex: 2000
         }}>
           <div style={{ textAlign: 'center', color: '#374151' }}>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-              Monad Jump
-            </h1>
-            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
-              Initializing jumping game...
-            </p>
+           
             
-            {/* Progress Bar */}
+            {/* Rotating Parsnip */}
             <div style={{ 
-              width: '320px', 
-              height: '8px', 
-              backgroundColor: '#e5e7eb',
-              borderRadius: '4px',
+              width: '100px', 
+              height: '100px', 
               margin: '0 auto 2rem',
-              overflow: 'hidden'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              <div style={{ 
-                width: '100%', 
-                height: '100%', 
-                background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
-                borderRadius: '4px',
-                animation: 'pulse 2s ease-in-out infinite'
-              }}></div>
+              <img 
+                src="/images/jump/parsnip1.png" 
+                alt="Loading..." 
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  animation: 'spin 2s linear infinite'
+                }}
+              />
             </div>
             
-            <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Loading assets and preparing game...</p>
+            
           </div>
+          
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `
+          }} />
         </div>
       )}
       

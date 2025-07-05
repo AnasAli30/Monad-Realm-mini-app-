@@ -104,11 +104,11 @@ export default function CandyCrushGame() {
     const GRID_COLS = 6;
     const GRID_ROWS = 8;
     const CANDY_SIZE = 55; // Smaller candy size to create padding
-    const CANDY_SPACING = 60; // Space between candy centers
+    let CANDY_SPACING = 60; // Will be calculated based on screen width
     const CELL_PADDING = 7; // Padding inside each grid cell
-    const GRID_PADDING = 0; // Padding around the entire grid
-    const GRID_X = GRID_PADDING + 25;
-    const GRID_Y = 180;
+    const GRID_PADDING = 20; // Padding around the entire grid
+    let GRID_X = 0; // Will be calculated after scene creation
+    const GRID_Y = 150;
     const CANDY_TYPES = ['1', '2', '3', '4', '5', '6'];
 
     class Candy extends Phaser.GameObjects.Sprite {
@@ -193,39 +193,38 @@ export default function CandyCrushGame() {
     let challengeLabelText: Phaser.GameObjects.Text | null = null;
     let challengeText: Phaser.GameObjects.Text | null = null;
     let challengeIcon: Phaser.GameObjects.Sprite | null = null;
+    let challengeBarBg: Phaser.GameObjects.Graphics | null = null;
+    let challengeBarFill: Phaser.GameObjects.Graphics | null = null;
     let statusText: Phaser.GameObjects.Text | null = null;
 
-    function create(this: Phaser.Scene) {
+        function create(this: Phaser.Scene) {
       scene = this;
       
-      this.add.rectangle(200, 400, 400, 800, 0xf0f8ff);
+      // Calculate responsive grid dimensions after scene is initialized
+      const availableWidth = this.cameras.main.width - (GRID_PADDING * 2);
+      CANDY_SPACING = availableWidth / GRID_COLS;
+      GRID_X = GRID_PADDING;
       
-      // Create grid background with proper padding
-      const gridBg = this.add.graphics();
-      gridBg.fillStyle(0x333333, 0.1);
-      gridBg.fillRect(
-        GRID_X - GRID_PADDING, 
-        GRID_Y - GRID_PADDING, 
-        GRID_COLS * CANDY_SPACING + (GRID_PADDING * 2), 
-        GRID_ROWS * CANDY_SPACING + (GRID_PADDING * 2)
-      );
-      
-      // Create grid table lines
+      // Create grid table lines with rounded corner awareness
       const gridLines = this.add.graphics();
-      gridLines.lineStyle(2, 0x666666, 0.5); // Gray lines, semi-transparent
+      gridLines.lineStyle(2, 0xffffff, 0.5); // White lines, semi-transparent
       
-      // Draw vertical grid lines
-      for (let col = 0; col <= GRID_COLS; col++) {
+      const cornerRadius = 15;
+      const gridWidth = availableWidth;
+      const gridHeight = GRID_ROWS * CANDY_SPACING;
+      
+      // Draw vertical grid lines (skip corners for rounded effect)
+      for (let col = 1; col < GRID_COLS; col++) { // Skip first and last lines
         const x = GRID_X + col * CANDY_SPACING;
-        gridLines.moveTo(x, GRID_Y);
-        gridLines.lineTo(x, GRID_Y + GRID_ROWS * CANDY_SPACING);
+        gridLines.moveTo(x, GRID_Y + cornerRadius);
+        gridLines.lineTo(x, GRID_Y + gridHeight - cornerRadius);
       }
       
-      // Draw horizontal grid lines  
-      for (let row = 0; row <= GRID_ROWS; row++) {
+      // Draw horizontal grid lines (skip corners for rounded effect)
+      for (let row = 1; row < GRID_ROWS; row++) { // Skip first and last lines
         const y = GRID_Y + row * CANDY_SPACING;
-        gridLines.moveTo(GRID_X, y);
-        gridLines.lineTo(GRID_X + GRID_COLS * CANDY_SPACING, y);
+        gridLines.moveTo(GRID_X + cornerRadius, y);
+        gridLines.lineTo(GRID_X + gridWidth - cornerRadius, y);
       }
       
       gridLines.strokePath();
@@ -243,15 +242,33 @@ export default function CandyCrushGame() {
         loop: true
       });
       
-      // Create UI text objects and store references
-      scoreText = this.add.text(20, 20, 'Score: 0', { fontSize: '16px', color: '#333' });
-      levelText = this.add.text(20, 40, 'Level: 1', { fontSize: '16px', color: '#333' });
-      movesText = this.add.text(20, 60, 'Moves: 10', { fontSize: '16px', color: '#333' });
-      // Challenge display with candy icon  
-      // challengeLabelText = this.add.text(20, 80, '', { fontSize: '14px', color: '#666' });
-      challengeIcon = this.add.sprite(30, 90, 'candy-' + gameChallengeCandy);
-      challengeIcon.setDisplaySize(30,30); // Small icon size
-      challengeText = this.add.text(40, 83, '(0/10)', { fontSize: '14px', color: '#666' });
+            // Create UI text objects and store references (responsive positioning)
+      const screenWidth = this.cameras.main.width;
+      const centerX = screenWidth / 2;
+      const progressBarWidth = Math.min(screenWidth - 40, 300); // Responsive progress bar width
+      
+      scoreText = this.add.text(20, 10, 'Score: 0', { fontSize: '20px', color: 'black',fontWeight: 'bold' });
+      movesText = this.add.text(screenWidth - 20, 10, 'Moves:10', { fontSize: '20px', color: 'black',fontWeight: 'bold' }).setOrigin(1, 0);
+      
+      // Level text above progress bar
+      levelText = this.add.text(centerX, 40, 'Level: 1', { fontSize: '20px', color: 'black',fontWeight: 'bold' }).setOrigin(0.5, 0);
+      
+      // Challenge display centered
+     
+      
+      // Challenge progress bar centered
+      challengeBarBg = this.add.graphics();
+      challengeBarBg.fillStyle(0x333333, 0.3);
+      challengeBarBg.fillRect(centerX - progressBarWidth/2, 60, progressBarWidth, 20); // Responsive background bar
+      
+      challengeBarFill = this.add.graphics();
+      challengeBarFill.fillStyle(0x00aa00, 1);
+      challengeBarFill.fillRect(centerX - progressBarWidth/2, 60, 0, 20); // Responsive progress fill (starts at 0 width)
+      
+            // Challenge text below progress bar
+        challengeIcon = this.add.sprite(centerX - 40, 102, 'candy-' + gameChallengeCandy);
+       challengeIcon.setDisplaySize(35,35); // Small icon size
+        challengeText = this.add.text(centerX + 10, 100, '(0/10)', { fontSize: '17px', color: 'black',fontWeight: 'bold' }).setOrigin(0.5, 0);
       
     
       
@@ -279,11 +296,11 @@ export default function CandyCrushGame() {
         
         // Color coding for progress
         if (gameChallengeProgress >= gameChallengeTarget) {
-          challengeText.setColor('#00aa00'); // Green when complete
+          challengeText.setColor('#00ff00'); // Bright green when complete
         } else if (gameChallengeProgress >= gameChallengeTarget * 0.7) {
-          challengeText.setColor('#ff8800'); // Orange when close
+          challengeText.setColor('#ffaa00'); // Bright orange when close
         } else {
-          challengeText.setColor('#666'); // Gray otherwise
+          challengeText.setColor('#000000'); // White otherwise
         }
       }
       
@@ -292,14 +309,62 @@ export default function CandyCrushGame() {
         challengeIcon.setTexture('candy-' + gameChallengeCandy);
       }
       
+      // Update challenge progress bar with smooth animation
+      if (challengeBarFill) {
+        const progressPercent = Math.min(gameChallengeProgress / gameChallengeTarget, 1);
+        const centerX = scene.cameras.main.width / 2;
+        const progressBarWidth = Math.min(scene.cameras.main.width - 40, 300);
+        const targetWidth = progressBarWidth * progressPercent;
+        
+        // Color based on progress
+        let barColor = 0x666666; // Gray for no progress
+        if (progressPercent >= 1) {
+          barColor = 0x00aa00; // Green when complete
+        } else if (progressPercent >= 0.7) {
+          barColor = 0xff8800; // Orange when close
+        } else if (progressPercent > 0) {
+          barColor = 0x3498db; // Blue for progress
+        }
+        
+        // Create animated progress bar object if it doesn't exist
+        if (!challengeBarFill.animatedWidth) {
+          challengeBarFill.animatedWidth = 0;
+        }
+        
+        // Animate the progress bar filling
+        scene.tweens.add({
+          targets: challengeBarFill,
+          animatedWidth: targetWidth,
+          duration: 500, // 500ms smooth animation
+          ease: 'Power2.out',
+          onUpdate: () => {
+            challengeBarFill.clear();
+            challengeBarFill.fillStyle(barColor, 1);
+            challengeBarFill.fillRect(centerX - progressBarWidth/2, 60, challengeBarFill.animatedWidth, 20);
+          },
+          onComplete: () => {
+            // Add a slight bounce effect when complete
+            if (progressPercent >= 1) {
+              scene.tweens.add({
+                targets: challengeBarFill,
+                scaleY: 1.2,
+                duration: 150,
+                ease: 'Back.out',
+                yoyo: true
+              });
+            }
+          }
+        });
+      }
+      
       // Update status based on game state
       if (statusText) {
         if (!isGameStable) {
           statusText.setText('⏳ Processing...');
-          statusText.setColor('#ff6600');
+          statusText.setColor('#ffaa00');
         } else {
           statusText.setText('✅ Ready to play');
-          statusText.setColor('#666');
+          statusText.setColor('#ffffff');
         }
       }
       
@@ -627,9 +692,11 @@ export default function CandyCrushGame() {
 
     function showInvalidMoveEffect() {
       // Create a brief "X" or "Invalid" text effect
-      const invalidText = scene.add.text(200, 400, '❌', {
+      const centerX = scene.cameras.main.width / 2;
+      const centerY = scene.cameras.main.height / 2;
+      const invalidText = scene.add.text(centerX, centerY, '❌', {
         fontSize: '48px',
-        color: '#ff0000'
+        color: '#ffffff'
       }).setOrigin(0.5).setAlpha(0);
       
       scene.tweens.add({
@@ -1165,11 +1232,12 @@ export default function CandyCrushGame() {
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 400,
-      height: 800,
+      width: window.innerWidth,
+      height: window.innerHeight,
       parent: gameRef.current,
+      transparent: true, // Make canvas transparent to show CSS background
       scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
         // Handle high DPI displays for better image quality
         zoom: window.devicePixelRatio || 1
@@ -1200,7 +1268,7 @@ export default function CandyCrushGame() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: gameInitialized ? '#f0f8ff' : 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)'
+      background: gameInitialized ? 'radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)' : 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)'
     }}>
       {/* Candy background during initialization */}
       {!gameInitialized && (
@@ -1210,7 +1278,7 @@ export default function CandyCrushGame() {
           left: 0,
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)',
+          background: 'radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1230,9 +1298,7 @@ export default function CandyCrushGame() {
       
       <div ref={gameRef} style={{ 
         width: '100%', 
-        height: '800px',
-        maxWidth: '100vw',
-        maxHeight: '100vh',
+        height: '100%',
         opacity: gameInitialized ? 1 : 0,
         filter: gameOverState ? 'blur(5px)' : 'none',
         transition: 'opacity 0.3s ease, filter 0.5s ease'

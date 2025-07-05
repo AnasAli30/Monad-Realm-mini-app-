@@ -42,7 +42,7 @@ const Leaderboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'idle'>('enter');
 
-  const gameOptions = ['Candy Crush', 'Bounce Blaster', 'Monad Jump'];
+  const gameOptions = ['Candy Crush', 'Bounce Blaster', 'Sky Bound'];
 
   useEffect(() => {
     fetchLeaderboard();
@@ -198,7 +198,7 @@ const Leaderboard = () => {
         return '🍭';
       case 'Bounce Blaster':
         return '🎯';
-      case 'Monad Jump':
+      case 'Hop Up':
         return '🦘';
       default:
         return '🎮';
@@ -211,7 +211,7 @@ const Leaderboard = () => {
         return 'linear-gradient(135deg, #dc2626, #b91c1c)';
       case 'Bounce Blaster':
         return 'linear-gradient(135deg, #1d4ed8, #1e40af)';
-      case 'Monad Jump':
+      case 'Hop Up':
         return 'linear-gradient(135deg, #7c3aed, #6d28d9)';
       default:
         return 'linear-gradient(135deg, #374151, #1f2937)';

@@ -2,167 +2,197 @@
 
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-const VerticalJumperGame = dynamic(() => import('@/components/Home/VerticalJumperGame'), { 
-  ssr: false,
-  loading: () => (
+// Dynamic Loading Component
+const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
+  title: string;
+  subtitle: string;
+  description: string;
+  background: string;
+  textColor: string;
+}) => {
+  const [progress, setProgress] = useState(0);
+  const [loadingText, setLoadingText] = useState('Initializing...');
+
+  useEffect(() => {
+    const stages = [
+      { percent: 15, text: 'Loading assets...', delay: 200 },
+      { percent: 35, text: 'Preparing graphics...', delay: 300 },
+      { percent: 55, text: 'Setting up physics...', delay: 400 },
+      { percent: 75, text: 'Configuring gameplay...', delay: 350 },
+      { percent: 90, text: 'Finalizing...', delay: 250 },
+      { percent: 100, text: 'Ready to play!', delay: 200 }
+    ];
+
+    let currentStage = 0;
+    const animate = () => {
+      if (currentStage < stages.length) {
+        const stage = stages[currentStage];
+        setLoadingText(stage.text);
+        
+        // Smooth progress animation
+        const startProgress = progress;
+        const targetProgress = stage.percent;
+        const duration = stage.delay;
+        const startTime = Date.now();
+        
+        const animateProgress = () => {
+          const elapsed = Date.now() - startTime;
+          const progressRatio = Math.min(elapsed / duration, 1);
+          const currentProgress = startProgress + (targetProgress - startProgress) * progressRatio;
+          
+          setProgress(Math.floor(currentProgress));
+          
+          if (progressRatio < 1) {
+            requestAnimationFrame(animateProgress);
+          } else {
+            currentStage++;
+            setTimeout(animate, 100);
+          }
+        };
+        
+        animateProgress();
+      }
+    };
+
+    setTimeout(animate, 100);
+  }, []);
+
+  return (
     <div style={{ 
       position: 'fixed', 
       top: 0, 
       left: 0, 
       width: '100vw', 
       height: '100vh', 
-      background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 50%, #f3f4f6 100%)',
+      background,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 2000
     }}>
-      <div style={{ textAlign: 'center', color: '#374151' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-          Monad Jump
+      <div style={{ textAlign: 'center', color: textColor }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+          {title}
         </h1>
-        <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#6b7280' }}>
-          Loading game...
-        </p>
+      
         
+        {/* Progress Container */}
         <div style={{ 
-          width: '320px', 
-          height: '8px', 
-          backgroundColor: '#e5e7eb',
-          borderRadius: '4px',
-          margin: '0 auto 2rem',
-          overflow: 'hidden'
+          width: '350px', 
+          margin: '0 auto 1rem',
+          padding: '20px',
+          // backgroundColor: 'rgba(255,255,255,0.1)',
+          borderRadius: '12px',
+          // border: '1px solid rgba(255,255,255,0.2)'
         }}>
+          {/* Percentage Display */}
+          <div style={{ 
+            fontSize: '2rem', 
+            fontWeight: 'bold', 
+            marginBottom: '10px',
+            color: textColor
+          }}>
+            {progress}%
+          </div>
+          
+          {/* Progress Bar */}
           <div style={{ 
             width: '100%', 
-            height: '100%', 
-            background: 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
-            borderRadius: '4px',
-            animation: 'pulse 2s ease-in-out infinite'
-          }}></div>
+            height: '12px', 
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            borderRadius: '6px',
+            overflow: 'hidden',
+            position: 'relative'
+          }}>
+            <div style={{ 
+              width: `${progress}%`, 
+              height: '100%', 
+              background: 'linear-gradient(90deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%)',
+              borderRadius: '6px',
+              transition: 'width 0.3s ease',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Animated shine effect */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                animation: 'shine 2s infinite'
+              }}></div>
+            </div>
+          </div>
+          
+          {/* Loading Status Text */}
+          <div style={{ 
+            fontSize: '0.9rem', 
+            marginTop: '10px',
+            color: textColor,
+            opacity: 0.8
+          }}>
+            {loadingText}
+          </div>
         </div>
         
-        <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>Preparing game assets...</p>
+        <p style={{ fontSize: '0.875rem', opacity: 0.7 }}>{description}</p>
       </div>
       
       <style jsx>{`
+        @keyframes shine {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
       `}</style>
     </div>
+  );
+};
+
+const VerticalJumperGame = dynamic(() => import('@/components/Home/VerticalJumperGame'), { 
+  ssr: false,
+  loading: () => (
+    <DynamicLoader 
+      title="Hop Up"
+      subtitle=""
+      description=""
+      background="#46a6ce"
+      textColor="white"
+    />
   )
 });
 
 const CandyCrushGame = dynamic(() => import('@/components/Home/CandyCrushGame'), { 
   ssr: false,
   loading: () => (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      width: '100vw', 
-      height: '100vh', 
-      background: 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 2000
-    }}>
-      <div style={{ textAlign: 'center', color: '#ffffff' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-          MonaCrush
-        </h1>
-        <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#fff' }}>
-          Loading game...
-        </p>
-        
-        <div style={{ 
-          width: '320px', 
-          height: '8px', 
-          backgroundColor: 'rgba(255,255,255,0.3)',
-          borderRadius: '4px',
-          margin: '0 auto 2rem',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            width: '100%', 
-            height: '100%', 
-            background: 'linear-gradient(90deg, #ffffff 0%, #ffeb3b 100%)',
-            borderRadius: '4px',
-            animation: 'pulse 2s ease-in-out infinite'
-          }}></div>
-        </div>
-        
-        <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>Preparing candy adventure...</p>
-      </div>
-      
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
-    </div>
+    <DynamicLoader 
+      title="MonaCrush"
+      subtitle="Loading game..."
+      description=""
+      background="radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)"
+      textColor="#ffffff"
+    />
   )
 });
 
 const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGame'), { 
   ssr: false,
   loading: () => (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      width: '100vw', 
-      height: '100vh', 
-      background: 'linear-gradient(135deg, #001122 0%, #003344 50%, #001122 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 2000
-    }}>
-      <div style={{ textAlign: 'center', color: '#ffffff' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-          Bounce Blaster
-        </h1>
-        <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#fff' }}>
-          Loading game...
-        </p>
-        
-        <div style={{ 
-          width: '320px', 
-          height: '8px', 
-          backgroundColor: 'rgba(255,255,255,0.3)',
-          borderRadius: '4px',
-          margin: '0 auto 2rem',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            width: '100%', 
-            height: '100%', 
-            background: 'linear-gradient(90deg, #ffffff 0%, #ffeb3b 100%)',
-            borderRadius: '4px',
-            animation: 'pulse 2s ease-in-out infinite'
-          }}></div>
-        </div>
-        
-        <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.8)' }}>Preparing shooting mechanics...</p>
-      </div>
-      
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
-    </div>
+    <DynamicLoader 
+      title="Bounce Blaster"
+      subtitle="Loading game..."
+      description=""
+      background="linear-gradient(135deg, #001122 0%, #003344 50%, #001122 100%)"
+      textColor="#ffffff"
+    />
   )
 });
 
@@ -315,7 +345,7 @@ export function Demo() {
                 onClick={handleStartJumpGame}
                 className="w-64 px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
               >
-                🎮 Monad Jump
+                🎮 Hop Up
               </button>
               
               <button
