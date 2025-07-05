@@ -218,44 +218,7 @@ const Leaderboard = () => {
     }
   };
 
-  const getTopRankBadgeStyle = (rank: number): React.CSSProperties => {
-    const baseStyle: React.CSSProperties = {
-      position: 'absolute',
-      top: '-4px',
-      right: '-4px',
-      width: '24px',
-      height: '24px',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-      zIndex: 2,
-      border: '2px solid rgba(255, 255, 255, 0.8)',
-    };
 
-    if (rank === 1) {
-      return {
-        ...baseStyle,
-        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-        color: '#ffffff',
-      };
-    } else if (rank === 2) {
-      return {
-        ...baseStyle,
-        background: 'linear-gradient(135deg, #1d4ed8, #1e40af)',
-        color: '#ffffff',
-      };
-    } else {
-      return {
-        ...baseStyle,
-        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-        color: '#ffffff',
-      };
-    }
-  };
 
   const containerStyle: React.CSSProperties = {
     width: '100%',
@@ -300,7 +263,7 @@ const Leaderboard = () => {
 
   const entryStyle: React.CSSProperties = {
     borderRadius: '20px',
-    padding: '20px',
+    padding: '10px',
     transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     cursor: 'pointer',
     position: 'relative',
@@ -310,15 +273,15 @@ const Leaderboard = () => {
   const entryContentStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    gap: '17px',
     position: 'relative',
     zIndex: 1,
   };
 
   const profileContainerStyle: React.CSSProperties = {
     position: 'relative',
-    width: '60px',
-    height: '60px',
+    width: '55px',
+    height: '50px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -464,23 +427,31 @@ const Leaderboard = () => {
     return (
       <div style={skeletonCardStyle}>
         <div style={entryContentStyle}>
-          {/* Skeleton Rank Badge */}
-          <div style={skeletonBadgeStyle}>
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: '-100%',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
-              animation: 'shimmerSkeleton 2s infinite linear',
-              borderRadius: '50%',
-            }} />
-          </div>
-          
           {/* Skeleton Profile Picture */}
           <div style={profileContainerStyle}>
             <div style={skeletonAvatarStyle}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+                animation: 'shimmerSkeleton 2s infinite linear',
+                borderRadius: '50%',
+              }} />
+            </div>
+            
+            {/* Skeleton Rank Badge on top of profile image */}
+            <div style={{
+              ...skeletonBadgeStyle,
+              position: 'absolute',
+              top: '-10px',
+              right: '-10px',
+              width: '35px',
+              height: '35px',
+              zIndex: 3
+            }}>
               <div style={{
                 position: 'absolute',
                 top: 0,
@@ -618,7 +589,7 @@ const Leaderboard = () => {
           background: 'rgba(15, 23, 42, 0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '20px',
-          padding: '10px 0px',
+          padding: '10px 4px',
           marginBottom: '20px',
           border: '1px solid rgba(59, 130, 246, 0.3)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
@@ -764,7 +735,7 @@ const Leaderboard = () => {
           background: 'rgba(15, 23, 42, 0.95)',
           backdropFilter: 'blur(20px)',
           borderRadius: '20px',
-          padding: '10px 0px',
+          padding: '10px 4px',
           marginBottom: '20px',
           border: '1px solid rgba(59, 130, 246, 0.3)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
@@ -891,7 +862,7 @@ const Leaderboard = () => {
         background: 'rgba(15, 23, 42, 0.95)',
         backdropFilter: 'blur(20px)',
         borderRadius: '20px',
-        padding: '10px 0px',
+        padding: '10px 4px',
         marginBottom: '20px',
         border: '1px solid rgba(59, 130, 246, 0.3)',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
@@ -1020,40 +991,42 @@ const Leaderboard = () => {
               {index < 3 && <div style={shimmerStyle}></div>}
               
               <div style={entryContentStyle}>
-                {/* Rank Badge */}
-                <div style={getRankBadgeStyle(index + 1)}>
-                  {getRankEmoji(index + 1)}
-                </div>
-                
-                                  {/* Profile Picture */}
-                  <div style={profileContainerStyle}>
-                    <div style={profilePictureStyle}>
-                      {(entry.pfpUrl || (entry as any).pfpUrl) ? (
-                        <img
-                          src={entry.pfpUrl || (entry as any).pfpUrl}
-                          alt={`${entry.username || (entry as any).username}'s avatar`}
-                          style={profileImageStyle}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            if (e.currentTarget.parentElement) {
-                              e.currentTarget.parentElement.innerHTML = '👤';
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
-                          👤
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Rank badge for top 3 */}
-                    {index < 3 && (
-                      <div style={getTopRankBadgeStyle(index + 1)}>
-                        {index + 1}
+                {/* Profile Picture */}
+                <div style={profileContainerStyle}>
+                  <div style={profilePictureStyle}>
+                    {(entry.pfpUrl || (entry as any).pfpUrl) ? (
+                      <img
+                        src={entry.pfpUrl || (entry as any).pfpUrl}
+                        alt={`${entry.username || (entry as any).username}'s avatar`}
+                        style={profileImageStyle}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = '👤';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
+                        👤
                       </div>
                     )}
                   </div>
+                  
+                  {/* Rank Badge on top of profile image */}
+                  <div style={{
+                    ...getRankBadgeStyle(index + 1),
+                    position: 'absolute',
+                    top: '-5px',
+                    right: '-5px',
+                    width: '25px',
+                    height: '25px',
+                    fontSize: '14px',
+                    zIndex: 3
+                  }}>
+                    {getRankEmoji(index + 1)}
+                  </div>
+                </div>
                 
                 {/* Player Info */}
                 <div style={playerInfoStyle}>
@@ -1084,7 +1057,18 @@ const Leaderboard = () => {
                       </span>
                     )}
                     
-                    {selectedGame === 'Bounce Blaster' && ((entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed) && (
+                   
+                    
+                   
+                  </div>
+                </div>
+                
+                {/* Score */}
+                <div style={scoreContainerStyle}>
+                  <div style={scoreStyle}>
+                    {(entry.score || (entry as any).bestGame?.score || 0).toLocaleString()}
+                  </div>
+                  {selectedGame === 'Bounce Blaster' && ((entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed) && (
                       <span style={{ 
                         background: 'rgba(234, 88, 12, 0.2)',
                         borderRadius: '8px',
@@ -1095,8 +1079,7 @@ const Leaderboard = () => {
                         🎯 {(entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed}
                       </span>
                     )}
-                    
-                    {selectedGame === 'Candy Crush' && ((entry as any).gameData?.level || (entry as any).bestGame?.data?.level) && (
+                     {selectedGame === 'Candy Crush' && ((entry as any).gameData?.level || (entry as any).bestGame?.data?.level) && (
                       <span style={{ 
                         background: 'rgba(219, 39, 119, 0.2)',
                         borderRadius: '8px',
@@ -1107,17 +1090,6 @@ const Leaderboard = () => {
                         🍭 L{(entry as any).gameData?.level || (entry as any).bestGame?.data?.level}
                       </span>
                     )}
-                  </div>
-                </div>
-                
-                {/* Score */}
-                <div style={scoreContainerStyle}>
-                  <div style={scoreStyle}>
-                    {(entry.score || (entry as any).bestGame?.score || 0).toLocaleString()}
-                  </div>
-                  <div style={pointsStyle}>
-                    points
-                  </div>
                 </div>
               </div>
             </div>
