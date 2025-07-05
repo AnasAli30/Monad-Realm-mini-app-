@@ -196,6 +196,7 @@ export default function CandyCrushGame() {
     let challengeBarBg: Phaser.GameObjects.Graphics | null = null;
     let challengeBarFill: Phaser.GameObjects.Graphics | null = null;
     let statusText: Phaser.GameObjects.Text | null = null;
+    let currentProgressBarWidth = 0; // Track animated progress bar width
 
         function create(this: Phaser.Scene) {
       scene = this;
@@ -326,21 +327,17 @@ export default function CandyCrushGame() {
           barColor = 0x3498db; // Blue for progress
         }
         
-        // Create animated progress bar object if it doesn't exist
-        if (!challengeBarFill.animatedWidth) {
-          challengeBarFill.animatedWidth = 0;
-        }
-        
         // Animate the progress bar filling
         scene.tweens.add({
-          targets: challengeBarFill,
-          animatedWidth: targetWidth,
+          targets: { width: currentProgressBarWidth },
+          width: targetWidth,
           duration: 500, // 500ms smooth animation
           ease: 'Power2.out',
-          onUpdate: () => {
-            challengeBarFill.clear();
-            challengeBarFill.fillStyle(barColor, 1);
-            challengeBarFill.fillRect(centerX - progressBarWidth/2, 60, challengeBarFill.animatedWidth, 20);
+          onUpdate: (tween: any) => {
+            currentProgressBarWidth = tween.targets[0].width;
+            challengeBarFill!.clear();
+            challengeBarFill!.fillStyle(barColor, 1);
+            challengeBarFill!.fillRect(centerX - progressBarWidth/2, 60, currentProgressBarWidth, 20);
           },
           onComplete: () => {
             // Add a slight bounce effect when complete
