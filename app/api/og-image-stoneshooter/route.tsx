@@ -21,13 +21,13 @@ export async function GET(request: NextRequest) {
     const usernameX = 170;
     const usernameY = 90;
     const scoreX = 800;
-    const scoreY = 90;
+    const scoreY = 100;
     const timeX = 900;
-    const timeY = 170;
+    const timeY = 180;
     const stonesX = 900;
-    const stonesY = 250;
+    const stonesY = 270;
     const hitsX = 800;
-    const hitsY = 330;
+    const hitsY = 350;
     const fontSize = 48;
     const labelFontSize = 28;
 
