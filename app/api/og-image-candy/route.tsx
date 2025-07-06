@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
               textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '300px%',
+              width: '300px',
               justifyContent: 'center',
             }}
           >
