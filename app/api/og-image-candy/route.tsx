@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
               width: '100%',
               height: '100%',
               objectFit: 'contain',
-              objectPosition: 'center',
+              objectPosition: 'top center',
             }}
           />
 
