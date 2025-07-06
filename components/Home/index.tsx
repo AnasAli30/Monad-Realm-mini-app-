@@ -1,7 +1,6 @@
 'use client'
 
 import { sdk } from '@farcaster/miniapp-sdk'
-
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import { useFrame } from '@/components/farcaster-provider';
@@ -258,12 +257,13 @@ const Leaderboard = dynamic(() => import('@/components/Leaderboard'), {
 });
 
 export function Demo() {
+  
   const { context } = useFrame();
   const [currentTab, setCurrentTab] = useState<'game' | 'earn' | 'pvp' | 'leaderboard'>('game');
   const [selectedGame, setSelectedGame] = useState<null | 'hop' | 'candy' | 'blaster'>(null);
   const { actions } = useMiniAppContext();
   const { switchChain } = useSwitchChain();
-  const {isConnected} = useAccount()
+  const {isConnected,address} = useAccount()
   const [imagesLoaded, setImagesLoaded] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('monad-images-loaded') === 'true';
@@ -271,9 +271,40 @@ export function Demo() {
     return false;
   });
 
+  // Store user info to backend when game opens (once per session)
+  useEffect(() => {
+    if (!context || !context.user || !address) return;
+    if (typeof window === 'undefined') return;
+    if (sessionStorage.getItem('user-info-sent') === 'true') return;
+
+    const { fid, username, pfpUrl } = context.user;
+    const userInfo = {
+      fid,
+      username,
+      pfpUrl,
+      walletAddress: address,
+      name: username, // Default name to username
+    };
+    fetch('/api/userinfo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userInfo),
+    })
+      .then(() => {
+        sessionStorage.setItem('user-info-sent', 'true');
+      })
+      .catch((err) => {
+        // Optionally handle error
+        console.error('Failed to send user info:', err);
+      });
+  }, [context, address]);
+
   useEffect(()=>{
+    
     actions?.addFrame()
   },[isConnected,context])
+
+  
 
   // Preload game images only if not already loaded
   useEffect(() => {

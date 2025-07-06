@@ -133,12 +133,17 @@ export async function POST(request: NextRequest) {
     if (fusedKey !== expectedFusedKey) {
       return NextResponse.json({ success: false, error: 'Invalid verification key' }, { status: 403 });
     }
-    const usedFusedKeys = new Set<string>(); // In-memory for demo; use Redis or DB for production
-    if (usedFusedKeys.has(fusedKey)) {
+
+    const database = await connectToDatabase();
+    // Check fusedKey in DB
+    const fusedKeyCollection = database.collection('usedFusedKeys');
+    const existingFusedKey = await fusedKeyCollection.findOne({ fusedKey });
+    if (existingFusedKey) {
       return NextResponse.json({ success: false, error: 'used' }, { status: 409 });
     }
-    usedFusedKeys.add(fusedKey);
-    // Optionally: periodically clear old keys or use a TTL in production
+    // Save fusedKey to DB
+    await fusedKeyCollection.insertOne({ fusedKey, createdAt: new Date() });
+    // Optionally: periodically clear old keys or use a TTL index in production
 
     // Validation
     if (!fid || !username || typeof score !== 'number' || !game) {
@@ -148,7 +153,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const database = await connectToDatabase();
     const collection: Collection<PlayerDocument> = database.collection('players');
 
     // Sanitize inputs

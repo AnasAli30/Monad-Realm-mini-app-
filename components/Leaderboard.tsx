@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGamepad, faCandyCane, faBullseye, faArrowUp, faTrophy, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { fetchWithVerification } from '@/lib/leaderboard';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface GameData {
   score: number;
@@ -381,8 +382,8 @@ const Leaderboard = () => {
   };
 
   const profilePictureStyle: React.CSSProperties = {
-    width: '48px',
-    height: '48px',
+    width: '55px',
+    height: '55px',
     borderRadius: '50%',
     overflow: 'hidden',
     background: 'linear-gradient(135deg, #dc2626, #1d4ed8)',
@@ -1110,7 +1111,11 @@ const Leaderboard = () => {
               {/* Shimmer Effect */}
               {index < 3 && <div style={shimmerStyle}></div>}
               
-              <div style={entryContentStyle}>
+              <div style={entryContentStyle} onClick={async()=>{
+              await sdk.actions.viewProfile({ 
+                fid: entry.fid ||249702 ,
+              })
+              }}>
                 {/* Profile Picture */}
                 <div style={profileContainerStyle}>
                   <div style={profilePictureStyle}>
