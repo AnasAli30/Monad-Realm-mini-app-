@@ -8,38 +8,33 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const score = searchParams.get('score') || '0';
-    const time = searchParams.get('time') || '00:00';
+    const moves = searchParams.get('moves') || '0';
+    const level = searchParams.get('level') || '1';
     const userImg = searchParams.get('userImg') || '';
     const username = searchParams.get('username') || 'Player';
-    const gameType = searchParams.get('gameType') || 'vertical-jump';
     
-    // Position parameters with defaults
-    const pfpX = parseInt(searchParams.get('pfpX') || '265');
-    const pfpY = parseInt(searchParams.get('pfpY') || '220');
-    const scoreX = parseInt(searchParams.get('scoreX') || '620');
-    const scoreY = parseInt(searchParams.get('scoreY') || '170');
-    const timeX = parseInt(searchParams.get('timeX') || '534');
-    const timeY = parseInt(searchParams.get('timeY') || '400');
+    // Position parameters with updated defaults for Candy Crush layout
+    const pfpX = parseInt(searchParams.get('pfpX') || '531');
+    const pfpY = parseInt(searchParams.get('pfpY') || '192');
+    const scoreX = parseInt(searchParams.get('scoreX') || '493');
+    const scoreY = parseInt(searchParams.get('scoreY') || '46');
+    const movesX = parseInt(searchParams.get('movesX') || '698');
+    const movesY = parseInt(searchParams.get('movesY') || '101');
+    const levelX = parseInt(searchParams.get('levelX') || '541');
+    const levelY = parseInt(searchParams.get('levelY') || '300');
+    const usernameX = parseInt(searchParams.get('usernameX') || '653');
+    const usernameY = parseInt(searchParams.get('usernameY') || '198');
 
-    // New label and username positions
-    const scoreLabelX = parseInt(searchParams.get('scoreLabelX') || '622');
-    const scoreLabelY = parseInt(searchParams.get('scoreLabelY') || '240');
-    const timeLabelX = parseInt(searchParams.get('timeLabelX') || '542');
-    const timeLabelY = parseInt(searchParams.get('timeLabelY') || '465');
-    const usernameX = parseInt(searchParams.get('usernameX') || '295');
-    const usernameY = parseInt(searchParams.get('usernameY') || '562');
-
-    // Size parameters with defaults
-    const pfpRadius = parseInt(searchParams.get('pfpRadius') || '123');
-    const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '54');
-    const timeFontSize = parseInt(searchParams.get('timeFontSize') || '48');
-    const scoreLabelFontSize = parseInt(searchParams.get('scoreLabelFontSize') || '32');
-    const timeLabelFontSize = parseInt(searchParams.get('timeLabelFontSize') || '32');
-    const usernameFontSize = parseInt(searchParams.get('usernameFontSize') || '39');
+    // Size parameters with updated defaults
+    const pfpRadius = parseInt(searchParams.get('pfpRadius') || '50');
+    const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '37');
+    const movesFontSize = parseInt(searchParams.get('movesFontSize') || '48');
+    const levelFontSize = parseInt(searchParams.get('levelFontSize') || '48');
+    const usernameFontSize = parseInt(searchParams.get('usernameFontSize') || '43');
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
-    const backgroundImageUrl = `${baseUrl}/images/hop.png`;
+    const backgroundImageUrl = `${baseUrl}/images/mona.png`;
 
     return new ImageResponse(
       (
@@ -49,7 +44,7 @@ export async function GET(request: NextRequest) {
             height: '630px',
             display: 'flex',
             position: 'relative',
-            backgroundColor: '#1e40af',
+            backgroundColor: '#ff69b4', // Pink fallback for candy theme
           }}
         >
           {/* Background Image */}
@@ -94,80 +89,61 @@ export async function GET(request: NextRequest) {
             </div>
           )}
 
-          {/* Score Number */}
+          {/* Score */}
           <div
             style={{
               position: 'absolute',
               top: `${scoreY}px`,
               left: `${scoreX}px`,
-              color: '#ffffff',
+              color: '#000000',
               fontSize: `${scoreFontSize}px`,
               fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '120px',
+              width: '150px',
               justifyContent: 'center',
             }}
           >
             {parseInt(score).toLocaleString()}
           </div>
 
-          {/* Score Label */}
+          {/* Moves */}
           <div
             style={{
               position: 'absolute',
-              top: `${scoreLabelY}px`,
-              left: `${scoreLabelX}px`,
-              color: '#ffffff',
-              fontSize: `${scoreLabelFontSize}px`,
+              top: `${movesY}px`,
+              left: `${movesX}px`,
+              color: '#000000',
+              fontSize: `${movesFontSize}px`,
               fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '120px',
+              width: '100px',
               justifyContent: 'center',
             }}
           >
-            SCORE
+            {moves}
           </div>
 
-          {/* Time Number */}
+          {/* Level */}
           <div
             style={{
               position: 'absolute',
-              top: `${timeY}px`,
-              left: `${timeX}px`,
-              color: '#ffffff',
-              fontSize: `${timeFontSize}px`,
+              top: `${levelY}px`,
+              left: `${levelX}px`,
+              color: '#000000',
+              fontSize: `${levelFontSize}px`,
               fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '120px',
+              width: '100px',
               justifyContent: 'center',
             }}
           >
-            {time}
-          </div>
-
-          {/* Time Label */}
-          <div
-            style={{
-              position: 'absolute',
-              top: `${timeLabelY}px`,
-              left: `${timeLabelX}px`,
-              color: '#ffffff',
-              fontSize: `${timeLabelFontSize}px`,
-              fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              display: 'flex',
-              textAlign: 'center',
-              width: '120px',
-              justifyContent: 'center',
-            }}
-          >
-            TIME
+            {level}
           </div>
 
           {/* Username */}
@@ -176,10 +152,10 @@ export async function GET(request: NextRequest) {
               position: 'absolute',
               top: `${usernameY}px`,
               left: `${usernameX}px`,
-              color: '#ffffff',
+              color: '#000000',
               fontSize: `${usernameFontSize}px`,
               fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
               width: '200px',
@@ -196,8 +172,8 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (e: any) {
-    console.log(`Failed to generate image: ${e.message}`);
-    return new Response(`Failed to generate image`, {
+    console.log(`Failed to generate candy crush image: ${e.message}`);
+    return new Response(`Failed to generate candy crush image`, {
       status: 500,
     });
   }

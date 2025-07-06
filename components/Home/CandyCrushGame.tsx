@@ -1559,10 +1559,22 @@ export default function CandyCrushGame() {
                 
                 const shareText = `🍭 Just scored ${score} points and reached level ${level} in Candy Crush! 💥\n\nCan you beat my score?${improvementText}`;
                 
+                // Create dynamic share URL with candy crush game data
+                const shareParams = new URLSearchParams({
+                  score: score.toString(),
+                  level: level.toString(),
+                  moves: moves.toString(),
+                  gameType: 'candy-crush',
+                  userImg: context?.user?.pfpUrl || '',
+                  username: context?.user?.username || context?.user?.displayName || 'Player'
+                });
+
+                const shareUrl = `${APP_URL}/api/og-image-candy?${shareParams.toString()}`;
+                
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
-                    embeds: [`${APP_URL}`],
+                    embeds: [shareUrl],
                   });
                 } 
               } catch (error) {

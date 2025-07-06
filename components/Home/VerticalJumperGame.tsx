@@ -1522,7 +1522,7 @@ export default function VerticalJumperGame() {
                   ? `\n\n🔥 That's +${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% improvement from my Highest Score!`
                   : '';
                 
-                const shareText = `🎮 Just scored ${gameOverData.score} points in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Monad Jump! 🚀${improvementText}\n\nCan you beat my score?`;
+                const shareText = `🎮 Just scored ${gameOverData.score} in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Hop up! 🚀${improvementText}\n\nCan you beat my score?`;
                 
                 // Get player data for dynamic image
                 const playerData = getPlayerData(context);
