@@ -200,7 +200,59 @@ const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGam
   )
 });
 
-const Leaderboard = dynamic(() => import('@/components/Leaderboard'), { ssr: false });
+const LeaderboardLoadingBar = () => {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    let frame: number;
+    let start: number | null = null;
+    const duration = 800; // ms
+    function animateBar(ts: number) {
+      if (!start) start = ts;
+      const elapsed = ts - start;
+      const percent = Math.min(100, (elapsed / duration) * 100);
+      setProgress(percent);
+      if (percent < 100) {
+        frame = requestAnimationFrame(animateBar);
+      }
+    }
+    frame = requestAnimationFrame(animateBar);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return (
+    <div style={{
+      width: '100vw',
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)',
+      position: 'relative',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: 4,
+        width: '100%',
+        background: 'rgba(0,0,0,0.05)',
+        zIndex: 10,
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${progress}%`,
+          background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+          transition: 'width 0.2s',
+        }} />
+      </div>
+      <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: 18, opacity: 0.7 }}>Loading leaderboard...</span>
+    </div>
+  );
+};
+
+const Leaderboard = dynamic(() => import('@/components/Leaderboard'), {
+  ssr: false,
+  loading: LeaderboardLoadingBar
+});
 
 export function Demo() {
   const { context } = useFrame();
@@ -366,26 +418,13 @@ export function Demo() {
 
   // Replace currentView logic with currentTab for main content rendering as needed.
   if (selectedGame === 'hop') {
-    return (
-      <>
-        <VerticalJumperGame />
-      </>
-    );
+    return <VerticalJumperGame onBack={() => setSelectedGame(null)} />;
   }
   if (selectedGame === 'candy') {
-    return (
-      <>
-        <CandyCrushGame />
-      </>
-    );
+    return <CandyCrushGame onBack={() => setSelectedGame(null)} />;
   }
   if (selectedGame === 'blaster') {
-    return (
-      <>
-      
-        <StoneShooterGame />
-      </>
-    );
+    return <StoneShooterGame onBack={() => setSelectedGame(null)} />;
   }
 
   if (currentTab === 'game') {

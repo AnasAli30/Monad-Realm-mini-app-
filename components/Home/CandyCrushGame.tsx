@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import Phaser from 'phaser';
 import { APP_URL } from '@/lib/constants';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function CandyCrushGame() {
+export default function CandyCrushGame({ onBack }) {
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [gameInitialized, setGameInitialized] = useState(false);
   const [gameOverState, setGameOverState] = useState(false); // Track game over for blur effect
   const [gameOver, setGameOver] = useState(false);
@@ -71,7 +73,7 @@ export default function CandyCrushGame() {
   };
 
   const handleBackToMenu = () => {
-    window.location.reload();
+    if (onBack) onBack();
   };
 
 
@@ -1257,6 +1259,97 @@ export default function CandyCrushGame() {
     new Phaser.Game(config);
   };
 
+  // Memoized background animation data for stable animation
+  const sparkleData = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const size = Math.random() * 6 + 3;
+      const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
+      const sparkleColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+      return {
+        size,
+        color: sparkleColor,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `candySparkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 6}s`,
+        opacity: Math.random() * 0.7 + 0.3,
+        textShadow: `0 0 ${size}px ${sparkleColor}`,
+      };
+    }),
+    []
+  );
+  const heartData = useMemo(() =>
+    Array.from({ length: 8 }, (_, i) => {
+      const size = Math.random() * 8 + 4;
+      const pinkColors = ['#ff69b4', '#ff1493', '#ffc0cb', '#ff44ff'];
+      const heartColor = pinkColors[Math.floor(Math.random() * pinkColors.length)];
+      return {
+        size,
+        color: heartColor,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `candyFloat ${Math.random() * 5 + 4}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 8}s`,
+        opacity: Math.random() * 0.6 + 0.4,
+        textShadow: `0 0 ${size/2}px ${heartColor}`,
+      };
+    }),
+    []
+  );
+  const starData = useMemo(() =>
+    Array.from({ length: 10 }, (_, i) => {
+      const size = Math.random() * 7 + 5;
+      const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
+      const starColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+      return {
+        size,
+        color: starColor,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `candyTwinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 7}s`,
+        opacity: Math.random() * 0.8 + 0.2,
+        textShadow: `0 0 ${size/2}px ${starColor}`,
+      };
+    }),
+    []
+  );
+  const bubbleData = useMemo(() =>
+    Array.from({ length: 6 }, (_, i) => {
+      const size = Math.random() * 10 + 6;
+      const bubbleColors = ['#ff69b4', '#ffc0cb', '#ffffff', '#f0f8ff'];
+      const bubbleColor = bubbleColors[Math.floor(Math.random() * bubbleColors.length)];
+      return {
+        size,
+        color: bubbleColor,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `candyBubble ${Math.random() * 6 + 5}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 10}s`,
+        opacity: Math.random() * 0.4 + 0.2,
+        textShadow: `0 0 ${size/3}px ${bubbleColor}`,
+      };
+    }),
+    []
+  );
+  const candyFloatData = useMemo(() =>
+    Array.from({ length: 4 }, (_, i) => {
+      const size = Math.random() * 6 + 8;
+      const candyEmojis = ['🍭', '🍬', '🍫', '🧁'];
+      const candyEmoji = candyEmojis[Math.floor(Math.random() * candyEmojis.length)];
+      return {
+        size,
+        emoji: candyEmoji,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `candyDrift ${Math.random() * 8 + 6}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 12}s`,
+        opacity: Math.random() * 0.6 + 0.3,
+      };
+    }),
+    []
+  );
+
   return (
     <div style={{ 
       position: 'relative', 
@@ -1269,38 +1362,37 @@ export default function CandyCrushGame() {
     }}>
       {/* Candy Wonderland Animated Background */}
       {gameInitialized && (
-        <div style={{
+        <div
+          className={gameOver ? 'candy-bg-paused' : ''}
+          style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
           overflow: 'hidden',
-          zIndex: 1,
+            zIndex: '1',
           pointerEvents: 'none'
-        }}>
+          }}
+        >
           {/* Sparkles ✨ */}
-          {Array.from({ length: 12 }, (_, i) => {
-            const size = Math.random() * 6 + 3; // 3-9px sparkles
-            const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
-            const sparkleColor = candyColors[Math.floor(Math.random() * candyColors.length)];
-            return (
+          {sparkleData.map((sparkle, i) => (
               <div
                 key={`sparkle-${i}`}
                 className="sparkle"
                 style={{
                   position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  color: sparkleColor,
-                  fontSize: `${size}px`,
+                left: sparkle.left,
+                top: sparkle.top,
+                width: `${sparkle.size}px`,
+                height: `${sparkle.size}px`,
+                color: sparkle.color,
+                fontSize: `${sparkle.size}px`,
                   lineHeight: '1',
-                  animation: `candySparkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 6}s`,
-                  opacity: Math.random() * 0.7 + 0.3,
-                  textShadow: `0 0 ${size}px ${sparkleColor}`,
+                animation: sparkle.animation,
+                animationDelay: sparkle.animationDelay,
+                opacity: sparkle.opacity,
+                textShadow: sparkle.textShadow,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1309,31 +1401,25 @@ export default function CandyCrushGame() {
               >
                 ✨
               </div>
-            );
-          })}
-          
+          ))}
           {/* Hearts ♥ */}
-          {Array.from({ length: 8 }, (_, i) => {
-            const size = Math.random() * 8 + 4; // 4-12px hearts
-            const pinkColors = ['#ff69b4', '#ff1493', '#ffc0cb', '#ff44ff'];
-            const heartColor = pinkColors[Math.floor(Math.random() * pinkColors.length)];
-            return (
+          {heartData.map((heart, i) => (
               <div
                 key={`heart-${i}`}
                 className="heart"
                 style={{
                   position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  color: heartColor,
-                  fontSize: `${size}px`,
+                left: heart.left,
+                top: heart.top,
+                width: `${heart.size}px`,
+                height: `${heart.size}px`,
+                color: heart.color,
+                fontSize: `${heart.size}px`,
                   lineHeight: '1',
-                  animation: `candyFloat ${Math.random() * 5 + 4}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 8}s`,
-                  opacity: Math.random() * 0.6 + 0.4,
-                  textShadow: `0 0 ${size/2}px ${heartColor}`,
+                animation: heart.animation,
+                animationDelay: heart.animationDelay,
+                opacity: heart.opacity,
+                textShadow: heart.textShadow,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1342,31 +1428,25 @@ export default function CandyCrushGame() {
               >
                 ♥
               </div>
-            );
-          })}
-          
+          ))}
           {/* Stars ★ */}
-          {Array.from({ length: 10 }, (_, i) => {
-            const size = Math.random() * 7 + 5; // 5-12px stars
-            const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
-            const starColor = candyColors[Math.floor(Math.random() * candyColors.length)];
-            return (
+          {starData.map((star, i) => (
               <div
                 key={`star-${i}`}
                 className="star"
                 style={{
                   position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  color: starColor,
-                  fontSize: `${size}px`,
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                color: star.color,
+                fontSize: `${star.size}px`,
                   lineHeight: '1',
-                  animation: `candyTwinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 7}s`,
-                  opacity: Math.random() * 0.8 + 0.2,
-                  textShadow: `0 0 ${size/2}px ${starColor}`,
+                animation: star.animation,
+                animationDelay: star.animationDelay,
+                opacity: star.opacity,
+                textShadow: star.textShadow,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1375,31 +1455,25 @@ export default function CandyCrushGame() {
               >
                 ★
               </div>
-            );
-          })}
-          
+          ))}
           {/* Bubbles ○ */}
-          {Array.from({ length: 6 }, (_, i) => {
-            const size = Math.random() * 10 + 6; // 6-16px bubbles
-            const bubbleColors = ['#ff69b4', '#ffc0cb', '#ffffff', '#f0f8ff'];
-            const bubbleColor = bubbleColors[Math.floor(Math.random() * bubbleColors.length)];
-            return (
+          {bubbleData.map((bubble, i) => (
               <div
                 key={`bubble-${i}`}
                 className="bubble"
                 style={{
                   position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  color: bubbleColor,
-                  fontSize: `${size}px`,
+                left: bubble.left,
+                top: bubble.top,
+                width: `${bubble.size}px`,
+                height: `${bubble.size}px`,
+                color: bubble.color,
+                fontSize: `${bubble.size}px`,
                   lineHeight: '1',
-                  animation: `candyBubble ${Math.random() * 6 + 5}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 10}s`,
-                  opacity: Math.random() * 0.4 + 0.2,
-                  textShadow: `0 0 ${size/3}px ${bubbleColor}`,
+                animation: bubble.animation,
+                animationDelay: bubble.animationDelay,
+                opacity: bubble.opacity,
+                textShadow: bubble.textShadow,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1408,39 +1482,32 @@ export default function CandyCrushGame() {
               >
                 ○
               </div>
-            );
-          })}
-          
+          ))}
           {/* Floating Candy Emojis */}
-          {Array.from({ length: 4 }, (_, i) => {
-            const size = Math.random() * 6 + 8; // 8-14px candy
-            const candyEmojis = ['🍭', '🍬', '🍫', '🧁'];
-            const candyEmoji = candyEmojis[Math.floor(Math.random() * candyEmojis.length)];
-            return (
+          {candyFloatData.map((candy, i) => (
               <div
                 key={`candy-${i}`}
                 className="candy-float"
                 style={{
                   position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  fontSize: `${size}px`,
+                left: candy.left,
+                top: candy.top,
+                width: `${candy.size}px`,
+                height: `${candy.size}px`,
+                fontSize: `${candy.size}px`,
                   lineHeight: '1',
-                  animation: `candyDrift ${Math.random() * 8 + 6}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 12}s`,
-                  opacity: Math.random() * 0.6 + 0.3,
+                animation: candy.animation,
+                animationDelay: candy.animationDelay,
+                opacity: candy.opacity,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   pointerEvents: 'none'
                 }}
               >
-                {candyEmoji}
+              {candy.emoji}
               </div>
-            );
-          })}
+          ))}
         </div>
       )}
       
@@ -1481,7 +1548,7 @@ export default function CandyCrushGame() {
       
 
 
-      {!gameOver && (
+      {gameOver && (
         <>
           {/* Back to Games Button - Top Left */}
           <button
@@ -1557,7 +1624,7 @@ export default function CandyCrushGame() {
                   ? `\n\n🔥 That's +${Math.round(((score - previousBestScore) / previousBestScore) * 100)}% improvement from my Highest Score!`
                   : '';
                 
-                const shareText = `🍭 Just scored ${score} points and reached level ${level} in Candy Crush! 💥\n\nCan you beat my score?${improvementText}`;
+                const shareText = `🍭 Just scored ${score} and reached level ${level} in Mona Crush! 💥\n\nCan you beat my score?${improvementText}`;
                 
                 const playerData = getPlayerData(context);
                 
@@ -1632,8 +1699,8 @@ export default function CandyCrushGame() {
               left: '50%', 
               transform: 'translateX(-50%)',
               zIndex: 2000,
-              padding: '10px 40px',
-              fontSize: '40px',
+              padding: '10px 20px',
+              fontSize: '24px',
               fontWeight: 'bold',
               backgroundColor: '#4CAF50',
               color: 'white',
@@ -1747,6 +1814,13 @@ export default function CandyCrushGame() {
             opacity: 0.6;
             transform: translateX(10px) translateY(-5px) rotate(270deg);
           }
+        }
+        .candy-bg-paused .sparkle,
+        .candy-bg-paused .heart,
+        .candy-bg-paused .star,
+        .candy-bg-paused .bubble,
+        .candy-bg-paused .candy-float {
+          animation-play-state: paused !important;
         }
       `}</style>
     </div>

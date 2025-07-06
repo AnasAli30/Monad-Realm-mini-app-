@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     const scoreY = '46';
     const levelX = '698';
     const levelY = '46';
-    const usernameX = '653';
-    const usernameY = '190';
+    const usernameX = '640';
+    const usernameY = '210';
 
     // Size parameters with updated defaults
     const pfpRadius = 50;

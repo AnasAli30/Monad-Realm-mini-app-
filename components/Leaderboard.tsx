@@ -793,7 +793,10 @@ const Leaderboard = () => {
 
   if (isLoading) {
     return (
-      <div style={containerStyle}>
+      <div style={{
+        ...containerStyle,
+        overflow: 'hidden', // Hide scrollbar during skeleton loading
+      }}>
         {rewardPopup}
         {timerHeader}
         {navbar}

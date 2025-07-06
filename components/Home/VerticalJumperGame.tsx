@@ -5,7 +5,7 @@ import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function VerticalJumperGame() {
+export default function VerticalJumperGame({ onBack }) {
   const componentStartTime = performance.now();
   console.log('🎮 [MONAD JUMP] Component initializing at:', componentStartTime);
   
@@ -1469,10 +1469,7 @@ export default function VerticalJumperGame() {
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
             }}
-            onClick={() => {
-              // Navigate back to games section
-              window.history.back();
-            }}
+            onClick={onBack}
           >
 ◀ Games
           </button>

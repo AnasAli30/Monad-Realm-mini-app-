@@ -1,11 +1,11 @@
 'use client'
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Phaser from 'phaser';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function StoneShooterGame() {
+export default function StoneShooterGame({ onBack }) {
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
@@ -1201,6 +1201,34 @@ export default function StoneShooterGame() {
     };
   }, [gameKey]);
 
+  // Memoized star and shooting star data for stable animation
+  const starData = useMemo(() =>
+    Array.from({ length: 50 }, (_, i) => {
+      const size = Math.random() * 8 + 4;
+      const starColor = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffff88' : '#88ccff';
+      return {
+        size,
+        color: starColor,
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+        animationDelay: `${Math.random() * 5}s`,
+        opacity: Math.random() * 0.8 + 0.2,
+        textShadow: `0 0 ${size/2}px ${starColor}`,
+      };
+    }),
+    []
+  );
+  const shootingStarData = useMemo(() =>
+    Array.from({ length: 3 }, (_, i) => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 50}%`,
+      animation: `shoot ${Math.random() * 15 + 10}s linear infinite`,
+      animationDelay: `${Math.random() * 10}s`,
+    })),
+    []
+  );
+
   return (
     <>
       {showPermissionBtn && (
@@ -1256,7 +1284,7 @@ export default function StoneShooterGame() {
               transition: 'all 0.2s ease',
               pointerEvents: 'auto'
             }}
-            onClick={() => window.history.back()}
+            onClick={onBack}
           >
             ◀ Games
           </button>
@@ -1416,63 +1444,61 @@ export default function StoneShooterGame() {
         }} 
       >
         {/* Animated Stars Background */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          overflow: 'hidden',
-          zIndex: -1
-        }}>
-          {/* Generate stars with different sizes and positions */}
-          {Array.from({ length: 50 }, (_, i) => {
-            const size = Math.random() * 8 + 4; // 4-12px stars
-            const starColor = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffff88' : '#88ccff';
-            return (
-              <div
-                key={i}
-                className="star"
-                style={{
-                  position: 'absolute',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  color: starColor,
-                  fontSize: `${size}px`,
-                  lineHeight: '1',
-                  animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
-                  animationDelay: `${Math.random() * 5}s`,
-                  opacity: Math.random() * 0.8 + 0.2,
-                  textShadow: `0 0 ${size/2}px ${starColor}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  pointerEvents: 'none'
-                }}
-              >
-                ★
-              </div>
-            );
-          })}
-          
-          {/* Shooting stars */}
-          {Array.from({ length: 3 }, (_, i) => (
+        <div 
+          className={gameOver ? 'stars-paused' : ''}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            overflow: 'hidden',
+            zIndex: -1
+          }}
+        >
+          {/* Generate stars with stable positions and animation */}
+          {starData.map((star, i) => (
+            <div
+              key={i}
+              className="star"
+              style={{
+                position: 'absolute',
+                left: star.left,
+                top: star.top,
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                color: star.color,
+                fontSize: `${star.size}px`,
+                lineHeight: '1',
+                animation: star.animation,
+                animationDelay: star.animationDelay,
+                opacity: star.opacity,
+                textShadow: star.textShadow,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none'
+              }}
+            >
+              ★
+            </div>
+          ))}
+          {/* Shooting stars with stable positions and animation */}
+          {shootingStarData.map((shoot, i) => (
             <div
               key={`shooting-${i}`}
               className="shooting-star"
               style={{
                 position: 'absolute',
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 50}%`,
+                left: shoot.left,
+                top: shoot.top,
                 width: '12px',
                 height: '12px',
                 color: '#ffffff',
                 fontSize: '12px',
                 lineHeight: '1',
-                animation: `shoot ${Math.random() * 15 + 10}s linear infinite`,
-                animationDelay: `${Math.random() * 10}s`,
+                animation: shoot.animation,
+                animationDelay: shoot.animationDelay,
                 opacity: 0.9,
                 textShadow: '0 0 8px #ffffff',
                 display: 'flex',
@@ -1518,6 +1544,9 @@ export default function StoneShooterGame() {
             transform: translateX(-100vw) translateY(100vh);
             opacity: 0;
           }
+        }
+        .stars-paused .star, .stars-paused .shooting-star {
+          animation-play-state: paused !important;
         }
       `}</style>
     </>
