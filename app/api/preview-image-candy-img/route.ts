@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
             ctx.fillStyle = '#ff69b4';
             ctx.fillRect(0, 0, 1200, 630);
             
-            // Draw background image (contain to avoid cropping)
-            const scale = Math.min(1200/bgImg.width, 630/bgImg.height);
+            // Draw background image (cover to fill entire frame)
+            const scale = Math.max(1200/bgImg.width, 630/bgImg.height);
             const x = (1200 - bgImg.width * scale) / 2;
             const y = (630 - bgImg.height * scale) / 2;
             ctx.drawImage(bgImg, x, y, bgImg.width * scale, bgImg.height * scale);

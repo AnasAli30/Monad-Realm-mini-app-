@@ -167,7 +167,7 @@ export async function GET(request: NextRequest) {
             addTextOverlays();
             addProfilePicture();
           };
-          bgImg.src = '/images/hop.png';
+          bgImg.src = '/og/hop.png';
         }
         
         function addTextOverlays() {
