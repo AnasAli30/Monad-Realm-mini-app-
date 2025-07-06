@@ -15,21 +15,21 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get('username') || 'Player';
     
     // Default positions and sizes
-    const pfpX = 80;
-    const pfpY = 80;
+    const pfpX = 400;
+    const pfpY = 250;
     const pfpRadius = 60;
-    const usernameX = 170;
-    const usernameY = 90;
-    const scoreX = 800;
-    const scoreY = 100;
-    const timeX = 900;
-    const timeY = 180;
-    const stonesX = 900;
-    const stonesY = 270;
+    const usernameX = 400;
+    const usernameY = 370;
+    const scoreX = 700;
+    const scoreY = 250;
+    const timeX = 700;
+    const timeY = 330;
+    const stonesX = 700;
+    const stonesY = 400;
     const hitsX = 800;
-    const hitsY = 350;
+    const hitsY = 470;
     const fontSize = 48;
-    const labelFontSize = 28;
+    const labelFontSize = 40;
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;

@@ -7,23 +7,23 @@ export async function GET(request: NextRequest) {
   const time = searchParams.get('time') || '00:00';
   const stonesDestroyed = searchParams.get('stonesDestroyed') || '0';
   const playerHits = searchParams.get('playerHits') || '0';
-  const userImg = searchParams.get('userImg') || '';
+  const userImg = searchParams.get('userImg') || 'https://images.ctfassets.net/h6goo9gw1hh6/2sNZtFAWOdP1lmQ33VwRN3/24e953b920a9cd0ff2e1d587742a2472/1-intro-photo-final.jpg?w=1200&h=992&fl=progressive&q=70&fm=jpg';
   const username = searchParams.get('username') || 'Player';
 
   // Position and size parameters with defaults (from og-image-stoneshooter)
-  const pfpX = parseInt(searchParams.get('pfpX') || '80');
-  const pfpY = parseInt(searchParams.get('pfpY') || '80');
+  const pfpX = parseInt(searchParams.get('pfpX') || '400');
+  const pfpY = parseInt(searchParams.get('pfpY') || '250');
   const pfpRadius = parseInt(searchParams.get('pfpRadius') || '60');
-  const usernameX = parseInt(searchParams.get('usernameX') || '170');
-  const usernameY = parseInt(searchParams.get('usernameY') || '90');
-  const scoreX = parseInt(searchParams.get('scoreX') || '800');
-  const scoreY = parseInt(searchParams.get('scoreY') || '100');
-  const timeX = parseInt(searchParams.get('timeX') || '900');
-  const timeY = parseInt(searchParams.get('timeY') || '180');
-  const stonesX = parseInt(searchParams.get('stonesX') || '900');
-  const stonesY = parseInt(searchParams.get('stonesY') || '270');
-  const hitsX = parseInt(searchParams.get('hitsX') || '800');
-  const hitsY = parseInt(searchParams.get('hitsY') || '350');
+  const usernameX = parseInt(searchParams.get('usernameX') || '400');
+  const usernameY = parseInt(searchParams.get('usernameY') || '370');
+  const scoreX = parseInt(searchParams.get('scoreX') || '700');
+  const scoreY = parseInt(searchParams.get('scoreY') || '250');
+  const timeX = parseInt(searchParams.get('timeX') || '700');
+  const timeY = parseInt(searchParams.get('timeY') || '330');
+  const stonesX = parseInt(searchParams.get('stonesX') || '700');
+  const stonesY = parseInt(searchParams.get('stonesY') || '400');
+  const hitsX = parseInt(searchParams.get('hitsX') || '700');
+  const hitsY = parseInt(searchParams.get('hitsY') || '470');
   const fontSize = parseInt(searchParams.get('fontSize') || '48');
   const labelFontSize = parseInt(searchParams.get('labelFontSize') || '28');
 
