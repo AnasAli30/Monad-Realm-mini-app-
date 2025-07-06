@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
-    const backgroundImageUrl = `${baseUrl}/images/mona.png`;
+    const backgroundImageUrl = `${baseUrl}/og/mona.png`;
 
     return new ImageResponse(
       (
