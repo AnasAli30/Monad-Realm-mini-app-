@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
-    const backgroundImageUrl = `${baseUrl}/images/bouce.png`;
+    const backgroundImageUrl = `${baseUrl}/og/bouce.png`;
 
     return new ImageResponse(
       (
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
               width: '100%',
               height: '100%',
               objectFit: 'cover',
-              objectPosition: 'center',
+              objectPosition: 'top center',
             }}
           />
 
