@@ -856,11 +856,11 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
           setGameOver(true);
           setGameOverState(true); // Set blur state
           
-          // Submit score to leaderboard
+          // In the game over logic (when gameMoves <= 0), the score is submitted securely:
+          // submitScore(playerData.fid, playerData.username, playerData.pfpUrl, gameScore, 'Candy Crush', { level: gameLevel })
+          // This uses fetchWithVerification for secure, one-time-key POST requests.
           const playerData = getPlayerData(context);
-          submitScore(playerData.fid, playerData.username, playerData.pfpUrl, gameScore, 'Candy Crush', {
-            level: gameLevel
-          }).then(result => {
+          submitScore(playerData.fid, playerData.username, playerData.pfpUrl, gameScore, 'Candy Crush', { level: gameLevel }).then(result => {
             if (result.success) {
               console.log('Score submitted successfully:', result.data);
             } else {

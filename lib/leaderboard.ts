@@ -1,3 +1,5 @@
+import { keccak256, toUtf8Bytes } from 'ethers';
+
 interface GameData {
   level?: number;
   time?: string;
@@ -16,6 +18,35 @@ interface LeaderboardEntry {
   lastPlayed?: Date;
 }
 
+
+  const secret = process.env.NEXT_PUBLIC_VERIFICATION_SECRET || 'demo_secret';
+
+
+function randomString(length = 16) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+export async function fetchWithVerification(url: string, options: any) {
+  const secret = process.env.NEXT_PUBLIC_VERIFICATION_SECRET || 'demo_secret';
+  let body = options.body ? JSON.parse(options.body) : {};
+  const randomKey = randomString(24);
+  // Fuse secret with randomKey, score, and fid for extra security
+  const score = body.score !== undefined ? String(body.score) : '';
+  const fid = body.fid !== undefined ? String(body.fid) : '';
+  const fusedKey = keccak256(toUtf8Bytes(randomKey + secret + score + fid));
+
+  body.randomKey = randomKey;
+  body.fusedKey = fusedKey;
+  options.body = JSON.stringify(body);
+
+  return fetch(url, options);
+}
+
 // Submit score to leaderboard
 export async function submitScore(
   fid: number,
@@ -26,7 +57,7 @@ export async function submitScore(
   gameData?: GameData
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const response = await fetch('/api/leaderboard', {
+    const response = await fetchWithVerification('/api/leaderboard', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

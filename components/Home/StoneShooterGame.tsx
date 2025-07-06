@@ -5,7 +5,11 @@ import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function StoneShooterGame({ onBack }) {
+interface StoneShooterGameProps {
+  onBack?: () => void;
+}
+
+export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);

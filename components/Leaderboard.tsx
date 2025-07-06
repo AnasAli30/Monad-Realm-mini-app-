@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGamepad, faCandyCane, faBullseye, faArrowUp, faTrophy, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { fetchWithVerification } from '@/lib/leaderboard';
 
 interface GameData {
   score: number;

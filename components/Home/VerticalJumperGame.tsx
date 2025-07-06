@@ -5,7 +5,11 @@ import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function VerticalJumperGame({ onBack }) {
+interface VerticalJumperGameProps {
+  onBack?: () => void;
+}
+
+export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) {
   const componentStartTime = performance.now();
   console.log('🎮 [MONAD JUMP] Component initializing at:', componentStartTime);
   

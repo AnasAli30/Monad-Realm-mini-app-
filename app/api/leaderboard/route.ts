@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, Db, Collection } from 'mongodb';
+import { keccak256, toUtf8Bytes } from 'ethers';
 
 // MongoDB connection
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
@@ -118,7 +119,26 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { fid, username, pfpUrl, score, game, gameData } = body;
+    const { fid, username, pfpUrl, score, game, gameData, randomKey, fusedKey } = body;
+
+    // Verification logic
+    if (!randomKey || !fusedKey) {
+      return NextResponse.json({ success: false, error: 'Missing verification keys' }, { status: 400 });
+    }
+    const verificationSecret = process.env.NEXT_PUBLIC_VERIFICATION_SECRET || "";
+    // Fuse secret with randomKey, score, and fid for extra security (must match client)
+    const scoreStr = score !== undefined ? String(score) : '';
+    const fidStr = fid !== undefined ? String(fid) : '';
+    const expectedFusedKey = keccak256(toUtf8Bytes(randomKey + verificationSecret + scoreStr + fidStr));
+    if (fusedKey !== expectedFusedKey) {
+      return NextResponse.json({ success: false, error: 'Invalid verification key' }, { status: 403 });
+    }
+    const usedFusedKeys = new Set<string>(); // In-memory for demo; use Redis or DB for production
+    if (usedFusedKeys.has(fusedKey)) {
+      return NextResponse.json({ success: false, error: 'used' }, { status: 409 });
+    }
+    usedFusedKeys.add(fusedKey);
+    // Optionally: periodically clear old keys or use a TTL in production
 
     // Validation
     if (!fid || !username || typeof score !== 'number' || !game) {
