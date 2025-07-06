@@ -88,10 +88,10 @@ export async function GET(request: NextRequest) {
             ctx.fillStyle = '#ff69b4';
             ctx.fillRect(0, 0, 1200, 630);
             
-            // Draw background image (cover to fill entire frame)
+            // Draw background image (cover to fill entire frame, positioned at top center)
             const scale = Math.max(1200/bgImg.width, 630/bgImg.height);
-            const x = (1200 - bgImg.width * scale) / 2;
-            const y = (630 - bgImg.height * scale) / 2;
+            const x = (1200 - bgImg.width * scale) / 2; // Center horizontally
+            const y = 0; // Position at top
             ctx.drawImage(bgImg, x, y, bgImg.width * scale, bgImg.height * scale);
             
             // Add overlays

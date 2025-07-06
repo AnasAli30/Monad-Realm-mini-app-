@@ -1481,7 +1481,7 @@ export default function CandyCrushGame() {
       
 
 
-      {gameOver && (
+      {!gameOver && (
         <>
           {/* Back to Games Button - Top Left */}
           <button
