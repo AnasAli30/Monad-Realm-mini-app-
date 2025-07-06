@@ -800,6 +800,7 @@ const Leaderboard = () => {
           {timeLeft.days}d {timeLeft.hours}h
         </div>
       </div>
+      
     </div>
   );
 
@@ -1178,7 +1179,13 @@ const Leaderboard = () => {
                         fontSize: '11px',
                         color: '#93c5fd'
                       }}>
-                        ⏱️ {formatTimer((entry as any).gameData?.time || (entry as any).bestGame?.data?.time)}
+                        ⏱️ {(() => {
+                          const t = (entry as any).gameData?.time || (entry as any).bestGame?.data?.time;
+                          // If t is a string in mm:ss format, show directly
+                          if (typeof t === 'string' && t.includes(':')) return t;
+                          // Otherwise, use formatTimer
+                          return formatTimer(t);
+                        })()}
                       </span>
                     )}
                     
