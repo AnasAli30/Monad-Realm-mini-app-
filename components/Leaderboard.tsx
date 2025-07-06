@@ -825,7 +825,7 @@ const Leaderboard = () => {
             background: selectedGame === tab.key ? '#fff' : 'transparent',
             border: 'none',
             borderRadius: '24px',
-            padding: '12px',
+            padding: '12px 3px',
             color: selectedGame === tab.key ? '#0066F5' : '#fff',
             fontWeight: selectedGame === tab.key ? 'bold' : 'normal',
             fontSize: 16,
@@ -835,7 +835,7 @@ const Leaderboard = () => {
             outline: 'none',
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 3,
           }}
         >
           {/* <span style={{ fontSize: 16 }}> */}

@@ -85,7 +85,7 @@ export async function POST(request: Request) {
         await setUserNotificationDetails(fid, event.notificationDetails);
         await sendFrameNotification({
           fid,
-          title: "Welcome to Monado Realm",
+          title: "Welcome to Monad Realm",
 body: `You've just unlocked a new Realm on Farcaster.`,
           notificationDetails: event.notificationDetails,
         });
@@ -104,7 +104,7 @@ body: `You've just unlocked a new Realm on Farcaster.`,
       await setUserNotificationDetails(fid, event.notificationDetails);
       await sendFrameNotification({
         fid,
-        title: "Monado Realm Activated!",
+        title: "Monad Realm Activated!",
         body: `You're all set! Notifications enabled – let the chaos begin`,        
         notificationDetails: event.notificationDetails,
       });
