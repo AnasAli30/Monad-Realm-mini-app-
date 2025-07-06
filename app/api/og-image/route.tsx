@@ -1,65 +1,78 @@
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 
+export const runtime = 'edge';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Extract parameters
     const score = searchParams.get('score') || '0';
     const time = searchParams.get('time') || '00:00';
     const userImg = searchParams.get('userImg') || '';
     const gameType = searchParams.get('gameType') || 'vertical-jump';
+    
+    // Position parameters with defaults
+    const pfpX = parseInt(searchParams.get('pfpX') || '282');
+    const pfpY = parseInt(searchParams.get('pfpY') || '249');
+    const scoreX = parseInt(searchParams.get('scoreX') || '610');
+    const scoreY = parseInt(searchParams.get('scoreY') || '170');
+    const timeX = parseInt(searchParams.get('timeX') || '534');
+    const timeY = parseInt(searchParams.get('timeY') || '400');
 
-    // Validate required parameters
-    if (!score || !time) {
-      return new Response('Missing required parameters', { status: 400 });
-    }
+    // Size parameters with defaults
+    const pfpRadius = parseInt(searchParams.get('pfpRadius') || '110');
+    const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '54');
+    const timeFontSize = parseInt(searchParams.get('timeFontSize') || '48');
 
-    // Get the full URL for the background image
+    // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
-    const backgroundImage = gameType === 'vertical-jump' 
-      ? `${baseUrl}/images/hop.png` 
-      : `${baseUrl}/images/feed.png`;
+    const backgroundImageUrl = `${baseUrl}/images/hop.png`;
 
     return new ImageResponse(
       (
         <div
           style={{
-            height: '100%',
-            width: '100%',
+            width: '1200px',
+            height: '630px',
             display: 'flex',
             position: 'relative',
-            backgroundImage: `url(${backgroundImage})`,
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
             backgroundColor: '#1e40af',
           }}
         >
-          {/* Profile Picture - Replace character face (positioned where the character's face is) */}
+          {/* Background Image */}
+          <img
+            src={backgroundImageUrl}
+            alt="Background"
+            style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              objectPosition: 'center',
+            }}
+          />
+
+          {/* Profile Picture */}
           {userImg && (
             <div
               style={{
                 position: 'absolute',
-                top: '260px', // Positioned where the character's face is
-                left: '160px', // Centered on the character
-                width: '80px',
-                height: '80px',
+                top: `${pfpY}px`,
+                left: `${pfpX}px`,
+                width: `${pfpRadius * 2}px`,
+                height: `${pfpRadius * 2}px`,
                 borderRadius: '50%',
                 overflow: 'hidden',
                 border: '4px solid #ffffff',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#ffffff',
-                zIndex: 10,
               }}
             >
               <img
                 src={userImg}
-                alt="Player"
+                alt="Profile"
                 style={{
                   width: '100%',
                   height: '100%',
@@ -69,67 +82,53 @@ export async function GET(request: NextRequest) {
             </div>
           )}
 
-          {/* Score - In the green SCORE tile at top */}
+          {/* Score */}
           <div
             style={{
               position: 'absolute',
-              top: '210px', // Position in the green SCORE tile
-              left: '440px', // Centered in the SCORE tile
+              top: `${scoreY}px`,
+              left: `${scoreX}px`,
+              color: '#ffffff',
+              fontSize: `${scoreFontSize}px`,
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              textAlign: 'center',
               width: '120px',
-              height: '30px',
+              justifyContent: 'center',
             }}
           >
-            <div
-              style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-                textAlign: 'center',
-              }}
-            >
-              {parseInt(score).toLocaleString()}
-            </div>
+            {parseInt(score).toLocaleString()}
           </div>
 
-          {/* Time - In the green TIME tile at bottom */}
+          {/* Time */}
           <div
             style={{
               position: 'absolute',
-              top: '400px', // Position in the green TIME tile
-              left: '350px', // Centered in the TIME tile
+              top: `${timeY}px`,
+              left: `${timeX}px`,
+              color: '#ffffff',
+              fontSize: `${timeFontSize}px`,
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              textAlign: 'center',
               width: '120px',
-              height: '30px',
+              justifyContent: 'center',
             }}
           >
-            <div
-              style={{
-                fontSize: '20px',
-                fontWeight: 'bold',
-                color: '#ffffff',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-                textAlign: 'center',
-              }}
-            >
-              {time}
-            </div>
+            {time}
           </div>
         </div>
       ),
       {
         width: 1200,
         height: 630,
-      },
+      }
     );
   } catch (e: any) {
-    console.log(`${e.message}`);
-    return new Response(`Failed to generate the image`, {
+    console.log(`Failed to generate image: ${e.message}`);
+    return new Response(`Failed to generate image`, {
       status: 500,
     });
   }
