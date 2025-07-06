@@ -3,6 +3,10 @@
 
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
+import { useFrame } from '@/components/farcaster-provider';
+import { SafeAreaContainer } from '@/components/safe-area-container';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGamepad as faGamepadSolid, faCoins, faUsers, faTrophy } from '@fortawesome/free-solid-svg-icons';
 
 // Dynamic Loading Component
 const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
@@ -199,23 +203,76 @@ const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGam
 const Leaderboard = dynamic(() => import('@/components/Leaderboard'), { ssr: false });
 
 export function Demo() {
-  const [currentView, setCurrentView] = useState<'singlePlayer' | 'jumpGame' | 'archerGame' | 'candyGame' | 'stoneShooterGame' | 'leaderboard'>('singlePlayer');
+  const { context } = useFrame();
+  const [currentTab, setCurrentTab] = useState<'game' | 'earn' | 'pvp' | 'leaderboard'>('game');
+  const [selectedGame, setSelectedGame] = useState<null | 'hop' | 'candy' | 'blaster'>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('monad-images-loaded') === 'true';
+    }
+    return false;
+  });
+
+  // Preload game images only if not already loaded
+  useEffect(() => {
+    if (imagesLoaded) return; // Skip if already loaded
+
+    const gameImages = [
+      '/images/hop.png',
+      '/images/mona.png', 
+      '/images/bouce.png'
+    ];
+
+    const preloadImage = (src: string) => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(src);
+        img.onerror = reject;
+        img.src = src;
+      });
+    };
+
+    Promise.all(gameImages.map(preloadImage))
+      .then(() => {
+        setImagesLoaded(true);
+        sessionStorage.setItem('monad-images-loaded', 'true');
+      })
+      .catch((error) => {
+        console.error('Failed to load images:', error);
+        // Still show the page even if some images fail
+        setImagesLoaded(true);
+        sessionStorage.setItem('monad-images-loaded', 'true');
+      });
+  }, [imagesLoaded]);
 
   const handleStartJumpGame = () => {
-    setCurrentView('jumpGame');
+    setCurrentTab('game');
   };
 
   const handleStartArcherGame = () => {
-    setCurrentView('archerGame');
+    setCurrentTab('game');
   };
 
   const handleStartCandyGame = () => {
-    setCurrentView('candyGame');
+    setCurrentTab('game');
   };
 
   const handleStartStoneShooterGame = () => {
-    setCurrentView('stoneShooterGame');
+    setCurrentTab('game');
   };
+
+  // Show loading screen until all images are loaded
+  if (!imagesLoaded) {
+    return (
+      <SafeAreaContainer insets={context?.client.safeAreaInsets}>
+        <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
+          <h1 className="text-3xl font-bold text-center">
+            Monad Realm
+          </h1>
+        </div>
+      </SafeAreaContainer>
+    );
+  }
 
   // Bottom Navigation Component
   const BottomNavbar = () => (
@@ -230,147 +287,126 @@ export function Demo() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-evenly',
-      padding: '0 10px',
+      padding: '0px 10px',
       zIndex: 1000,
       boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
     }}>
-
-      
       <button
-        onClick={() => setCurrentView('singlePlayer')}
+        onClick={() => setCurrentTab('game')}
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           background: 'none',
           border: 'none',
-          color: currentView === 'singlePlayer' ? '#ffffff' : 'rgba(255,255,255,0.7)',
-          fontSize: '12px',
-          fontWeight: currentView === 'singlePlayer' ? 'bold' : 'normal',
+          color: currentTab === 'game' ? '#0371c3' : 'rgba(0,0,0,0.5)',
+          fontSize: currentTab === 'game' ? '20px' : '18px',
+          fontWeight: currentTab === 'game' ? 'bold' : 'normal',
           cursor: 'pointer',
-          padding: '0px 16px',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease',
-          transform: currentView === 'singlePlayer' ? 'translateY(-2px)' : 'none'
         }}
       >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎮</div>
-       
+        <FontAwesomeIcon icon={faGamepadSolid} size="lg" style={{ opacity: currentTab === 'game' ? 1 : 0.5 }} />
+        {/* <span style={{ marginTop: 2 }}>Game</span> */}
       </button>
-      
-      
-      
       <button
-        disabled
+        onClick={() => setCurrentTab('earn')}
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           background: 'none',
           border: 'none',
-          color: 'rgba(255,255,255,0.4)',
-          fontSize: '12px',
-          fontWeight: 'normal',
-          cursor: 'not-allowed',
-          padding: '0px 16px',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease',
-          opacity: 0.6
-        }}
-      >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>💰</div>
-        
-      </button>
-      
-      <button
-        disabled
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'none',
-          border: 'none',
-          color: 'rgba(255,255,255,0.4)',
-          fontSize: '12px',
-          fontWeight: 'normal',
-          cursor: 'not-allowed',
-          padding: '0px 16px',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease',
-          opacity: 0.6
-        }}
-      >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>⚔️</div>
-       
-      </button>
-      <button
-        onClick={() => setCurrentView('leaderboard')}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'none',
-          border: 'none',
-          color: currentView === 'leaderboard' ? '#ffffff' : 'rgba(255,255,255,0.7)',
-          fontSize: '12px',
-          fontWeight: currentView === 'leaderboard' ? 'bold' : 'normal',
+          opacity: 0.3,
+          color: currentTab === 'earn' ? '#FFD700' : 'rgba(0,0,0,0.5)',
+          fontSize: currentTab === 'earn' ? '20px' : '16px',
+          fontWeight: currentTab === 'earn' ? 'bold' : 'normal',
           cursor: 'pointer',
-          padding: '0px 16px',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease',
-          transform: currentView === 'leaderboard' ? 'translateY(-2px)' : 'none'
+        }}
+      disabled>
+        <FontAwesomeIcon icon={faCoins} size="lg" />
+        {/* <span style={{ marginTop: 2 }}>Earn</span> */}
+      </button>
+      <button
+        onClick={() => setCurrentTab('pvp')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          opacity: 0.3,
+          color: currentTab === 'pvp' ? '#8b16b1' : 'rgba(0,0,0,0.5)',
+          fontSize: currentTab === 'pvp' ? '20px' : '16px',
+          fontWeight: currentTab === 'pvp' ? 'bold' : 'normal',
+          cursor: 'pointer',
+        }}
+      disabled>
+        <FontAwesomeIcon icon={faUsers} size="lg" />
+        {/* <span style={{ marginTop: 2 }}>PvP</span> */}
+      </button>
+      <button
+        onClick={() => setCurrentTab('leaderboard')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          color: currentTab === 'leaderboard' ? '#FFD700' : 'rgba(0,0,0,0.5)',
+          fontSize: currentTab === 'leaderboard' ? '20px' : '18px',
+          fontWeight: currentTab === 'leaderboard' ? 'bold' : 'normal',
+          cursor: 'pointer',
         }}
       >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>🏆</div>
-      
+        <FontAwesomeIcon icon={faTrophy} size="lg" />
+        {/* <span style={{ marginTop: 2 }}>Leaderboard</span> */}
       </button>
     </div>
   );
 
-  if (currentView === 'jumpGame') {
-    return <VerticalJumperGame />;
-  }
-
-  if (currentView === 'stoneShooterGame') {
-    return <StoneShooterGame />;
-  }
-
-  if (currentView === 'candyGame') {
-    return <CandyCrushGame />;
-  }
-
-  if (currentView === 'leaderboard') {
+  // Replace currentView logic with currentTab for main content rendering as needed.
+  if (selectedGame === 'hop') {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        paddingBottom: '80px', 
-        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
-      }}>
-        <Leaderboard />
-        <BottomNavbar />
-      </div>
+      <>
+        <VerticalJumperGame />
+      </>
+    );
+  }
+  if (selectedGame === 'candy') {
+    return (
+      <>
+        <CandyCrushGame />
+      </>
+    );
+  }
+  if (selectedGame === 'blaster') {
+    return (
+      <>
+      
+        <StoneShooterGame />
+      </>
     );
   }
 
-
-
-  if (currentView === 'singlePlayer') {
+  if (currentTab === 'game') {
     return (
       <div style={{ 
-        minHeight: '100vh', 
-        paddingBottom: '80px', 
+        paddingTop: '0px',
+        minHeight: '100vh',
+        paddingBottom: '50px', 
         background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
       }}>
-        <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
-          <div className="text-center space-y-6">
+        <div className="flex min-h-screen flex-col items-center justify-center">
+          <div className="text-center space-y-0 ">
             
             <div className="space-y-6">
               <button
-                onClick={handleStartJumpGame}
+                onClick={() => setSelectedGame('hop')}
                 style={{
                   width: '20rem',
                   height: '13rem',
-                  padding: '1.5rem 2rem',
+                  padding: '0rem 2rem',
+                  marginTop: '0rem',
                   background: `url('/images/hop.png')`,
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
@@ -394,7 +430,7 @@ export function Demo() {
               </button>
               
               <button
-                onClick={handleStartCandyGame}
+                onClick={() => setSelectedGame('candy')}
                 style={{
                   width: '20rem',
                   height: '11rem',
@@ -422,7 +458,7 @@ export function Demo() {
               </button>
               
               <button
-                onClick={handleStartStoneShooterGame}
+                onClick={() => setSelectedGame('blaster')}
                 style={{
                   width: '20rem',
                   height: '14rem',
@@ -454,16 +490,30 @@ export function Demo() {
     );
   }
 
+  if (currentTab === 'leaderboard') {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        paddingBottom: '80px', 
+        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
+      }}>
+        <Leaderboard />
+        <BottomNavbar />
+      </div>
+    );
+  }
+
   // Default to Games view (singlePlayer)
   return (
     <div style={{ 
       minHeight: '100vh', 
+      // width: '120vw',
       paddingBottom: '80px', 
       background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
     }}>
-      <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
-        <div className="text-center space-y-6">
-          <h1 className="text-4xl font-bold text-gray-800 mb-8">Single Player Games</h1>
+      <div className="flex min-h-screen flex-col items-center justify-center p-1 space-y-3">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Single Player Games</h1>
           
           <div className="space-y-4">
             <button

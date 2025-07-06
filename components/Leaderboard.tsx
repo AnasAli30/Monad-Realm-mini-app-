@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGamepad, faCandyCane, faBullseye, faArrowUp, faTrophy, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 interface GameData {
   score: number;
@@ -38,11 +40,24 @@ interface LeaderboardEntry {
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedGame, setSelectedGame] = useState<string>('Candy Crush');
+  const [selectedGame, setSelectedGame] = useState<'candy' | 'blaster' | 'hop'>('candy');
   const [error, setError] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'idle'>('enter');
+  const [showRewardPopup, setShowRewardPopup] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({ days: 7, hours: 0 });
 
-  const gameOptions = ['Candy Crush', 'Bounce Blaster', 'Sky Bound'];
+  const gameTabs = [
+    { key: 'hop', label: 'Hop Up', icon: faArrowUp },
+    { key: 'candy', label: 'Mona Crush', icon: faCandyCane },
+    { key: 'blaster', label: 'Bounce Blaster', icon: faBullseye },
+  ];
+
+  // Map tab key to game name
+  const gameKeyToName = {
+    candy: 'Candy Crush',
+    blaster: 'Bounce Blaster',
+    hop: 'Monad Jump',
+  };
 
   useEffect(() => {
     fetchLeaderboard();
@@ -55,20 +70,41 @@ const Leaderboard = () => {
     }
   }, [isLoading, leaderboardData]);
 
+  // Countdown timer effect
+  useEffect(() => {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + 7); // 7 days from now
+    
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const target = targetDate.getTime();
+      const difference = target - now;
+      
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        setTimeLeft({ days, hours });
+      } else {
+        setTimeLeft({ days: 0, hours: 0 });
+      }
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000 * 60 * 60); // Update every hour
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const fetchLeaderboard = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch(`/api/leaderboard?game=${encodeURIComponent(selectedGame)}&limit=50`);
-      
+      const gameName = gameKeyToName[selectedGame];
+      const response = await fetch(`/api/leaderboard?game=${encodeURIComponent(gameName)}&limit=50`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-
-      
       if (data.success) {
         setLeaderboardData(data.data || []);
       } else {
@@ -221,10 +257,11 @@ const Leaderboard = () => {
 
 
   const containerStyle: React.CSSProperties = {
-    width: '100%',
-    maxWidth: '512px',
+    width: '100vw',
+    // maxWidth: '512px',
     margin: '0 auto',
-    padding: '20px',
+    // paddingTop: '10px',
+    padding: '10px 20px',
     fontFamily: 'system-ui, -apple-system, sans-serif',
     position: 'relative',
   };
@@ -556,9 +593,211 @@ const Leaderboard = () => {
     );
   };
 
+  // Reward popup component
+  const rewardPopup = showRewardPopup && (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.8)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1000,
+      padding: '20px'
+    }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+        borderRadius: '20px',
+        padding: '32px',
+        maxWidth: '400px',
+        width: '100%',
+        border: '2px solid rgba(59, 130, 246, 0.5)',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+        position: 'relative'
+      }}>
+        <button
+          onClick={() => setShowRewardPopup(false)}
+          style={{
+            position: 'absolute',
+            top: '16px',
+            right: '16px',
+            background: 'transparent',
+            border: 'none',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '18px',
+            cursor: 'pointer',
+            padding: '4px',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <FontAwesomeIcon icon={faTimes} />
+        </button>
+        
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            fontSize: '48px', 
+            marginBottom: '16px',
+            background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            🏆
+          </div>
+          <h2 style={{
+            color: '#ffffff',
+            fontSize: '24px',
+            fontWeight: 'bold',
+            marginBottom: '16px',
+            margin: 0
+          }}>
+            1500 MON Reward Pool
+          </h2>
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: '16px',
+            lineHeight: '1.6',
+            margin: '16px 0 24px 0'
+          }}>
+            The total reward pool of <strong style={{ color: '#ffd700' }}>1500 MON</strong> will be distributed among the <strong style={{ color: '#ffd700' }}>top 10 players</strong> based on their scores across all games.
+          </p>
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.2)',
+            borderRadius: '12px',
+            padding: '16px',
+            border: '1px solid rgba(59, 130, 246, 0.3)'
+          }}>
+            <div style={{ color: '#93c5fd', fontSize: '14px', fontWeight: '600', width: '100%',padding: '0', margin: '0' }}>
+              <p style={{ margin: '0' }}>📊 Distribution based on</p>
+              <p style={{ margin: '0' }}>Ranking</p>
+              <p style={{ margin: '0' }}>Score performance</p>
+              <p style={{ margin: '0' }}>Time taken</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Timer and reward header
+  const timerHeader = (
+    <div style={{
+      background: 'rgba(15, 23, 42, 0.8)',
+      backdropFilter: 'blur(20px)',
+      borderRadius: '16px',
+      padding: '2px 20px',
+      marginBottom: '10px',
+      border: '1px solid rgba(59, 130, 246, 0.3)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)'
+        }}
+        onClick={() => setShowRewardPopup(true)}
+        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        >
+          <FontAwesomeIcon icon={faTrophy} style={{ color: '#0f172a', fontSize: '18px' }} />
+        </div>
+        <div>
+          <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600' }}>
+            1500 MON Pool
+          </div>
+          <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+            Click trophy for details
+          </div>
+        </div>
+      </div>
+      
+      <div style={{
+        // background: 'rgba(220, 38, 38, 0.2)',
+        borderRadius: '20px',
+        padding: '2px 10px',
+        margin: '10px 0px',
+        // border: '1px solid rgba(220, 38, 38, 0.3)'
+      }}>
+        <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>
+          {timeLeft.days}d {timeLeft.hours}h
+        </div>
+      </div>
+    </div>
+  );
+
+  // Top navbar
+  const navbar = (
+    <div
+      style={{
+        background: '#0066F5',
+        borderRadius: '32px',
+        padding: '10px 10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: '10px',
+      }}
+    >
+      {gameTabs.map(tab => (
+        <button
+          key={tab.key}
+          onClick={() => setSelectedGame(tab.key as any)}
+          style={{
+            background: selectedGame === tab.key ? '#fff' : 'transparent',
+            border: 'none',
+            borderRadius: '24px',
+            padding: '12px',
+            color: selectedGame === tab.key ? '#0066F5' : '#fff',
+            fontWeight: selectedGame === tab.key ? 'bold' : 'normal',
+            fontSize: 16,
+            opacity: selectedGame === tab.key ? 1 : 0.7,
+            transition: 'all 0.2s',
+            cursor: 'pointer',
+            outline: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          {/* <span style={{ fontSize: 16 }}> */}
+            <FontAwesomeIcon icon={tab.icon} />
+          {/* </span> */}
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div style={containerStyle}>
+        {rewardPopup}
+        {timerHeader}
+        {navbar}
+      
         {/* Animated Background Particles */}
         <div style={{
           position: 'absolute',
@@ -583,68 +822,6 @@ const Leaderboard = () => {
             />
           ))}
         </div>
-
-        {/* Skeleton Navigation Bar */}
-        <nav style={{
-          background: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '20px',
-          padding: '10px 4px',
-          marginBottom: '20px',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-          position: 'relative',
-          zIndex: 2
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexWrap: 'wrap' as const
-          }}>
-            {gameOptions.map((game, index) => (
-              <div
-                key={game}
-                style={{
-                  padding: '10px 10px',
-                  borderRadius: '15px',
-                  background: index === 0 
-                    ? 'rgba(255, 255, 255, 0.1)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  // gap: '8px',
-                  minWidth: '110px',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-                {index === 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '-100%',
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
-                    animation: 'shimmerSkeleton 2s infinite linear',
-                    borderRadius: '15px',
-                  }} />
-                )}
-                <span style={{ fontSize: '16px' }}>{getGameIcon(game)}</span>
-                <span>{game}</span>
-              </div>
-            ))}
-          </div>
-        </nav>
-
-    
 
         {/* Skeleton Leaderboard Entries */}
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -730,61 +907,10 @@ const Leaderboard = () => {
   if (error) {
     return (
       <div style={containerStyle}>
-        {/* Navigation Bar */}
-        <nav style={{
-          background: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '20px',
-          padding: '10px 4px',
-          marginBottom: '20px',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-          position: 'relative',
-          zIndex: 2
-        }}>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexWrap: 'wrap' as const
-          }}>
-            {gameOptions.map((game) => (
-              <button
-                key={game}
-                onClick={() => setSelectedGame(game)}
-                style={{
-                  padding: '10px 10px',
-                  borderRadius: '15px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                  background: selectedGame === game 
-                    ? getGameColor(game)
-                    : 'rgba(255, 255, 255, 0.1)',
-                  color: '#ffffff',
-                  border: selectedGame === game 
-                    ? '2px solid rgba(255, 255, 255, 0.4)' 
-                    : '1px solid rgba(255, 255, 255, 0.2)',
-                  boxShadow: selectedGame === game 
-                    ? '0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
-                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                  transform: selectedGame === game ? 'translateY(-2px) scale(1.05)' : 'translateY(0) scale(1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  // gap: '8px',
-                  minWidth: '110px',
-                  justifyContent: 'center'
-                }}
-              >
-                <span style={{ fontSize: '16px' }}>{getGameIcon(game)}</span>
-                <span>{game}</span>
-              </button>
-            ))}
-          </div>
-        </nav>
-
+        {rewardPopup}
+        {timerHeader}
+        {navbar}
+       
         <div style={{ textAlign: 'center', padding: '48px 0' }}>
           <div style={{ 
             background: 'rgba(15, 23, 42, 0.9)',
@@ -833,6 +959,10 @@ const Leaderboard = () => {
 
   return (
     <div style={containerStyle}>
+      {rewardPopup}
+      {timerHeader}
+      {navbar}
+      
       {/* Animated Background Particles */}
       <div style={{
         position: 'absolute',
@@ -856,75 +986,6 @@ const Leaderboard = () => {
           />
         ))}
       </div>
-
-      {/* Navigation Bar */}
-      <nav style={{
-        background: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '20px',
-        padding: '10px 4px',
-        marginBottom: '20px',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-        position: 'relative',
-        zIndex: 2
-      }}>
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexWrap: 'wrap' as const
-        }}>
-          {gameOptions.map((game) => (
-            <button
-              key={game}
-              onClick={() => setSelectedGame(game)}
-              style={{
-                padding: '10px 10px',
-                borderRadius: '15px',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                background: selectedGame === game 
-                  ? getGameColor(game)
-                  : 'rgba(255, 255, 255, 0.1)',
-                color: '#ffffff',
-                border: selectedGame === game 
-                  ? '2px solid rgba(255, 255, 255, 0.4)' 
-                  : '1px solid rgba(255, 255, 255, 0.2)',
-                boxShadow: selectedGame === game 
-                  ? '0 4px 15px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
-                  : '0 2px 8px rgba(0, 0, 0, 0.2)',
-                transform: selectedGame === game ? 'translateY(-2px) scale(1.05)' : 'translateY(0) scale(1)',
-                display: 'flex',
-                alignItems: 'center',
-                // gap: '6px',
-                minWidth: '110px',
-                justifyContent: 'center'
-              }}
-              onMouseOver={(e) => {
-                if (selectedGame !== game) {
-                  e.currentTarget.style.transform = 'translateY(-1px) scale(1.02)';
-                  e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.25)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (selectedGame !== game) {
-                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                }
-              }}
-            >
-              <span style={{ fontSize: '16px' }}>{getGameIcon(game)}</span>
-              <span>{game}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
 
       {/* Header */}
       {/* <div style={headerStyle}> */}
@@ -953,7 +1014,7 @@ const Leaderboard = () => {
                 No champions yet!
               </div>
               <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                Be the first to claim glory in {selectedGame}
+                Be the first to claim glory in {gameKeyToName[selectedGame]}
               </div>
             </div>
           </div>
@@ -1068,7 +1129,7 @@ const Leaderboard = () => {
                   <div style={scoreStyle}>
                     {(entry.score || (entry as any).bestGame?.score || 0).toLocaleString()}
                   </div>
-                  {selectedGame === 'Bounce Blaster' && ((entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed) && (
+                  {gameKeyToName[selectedGame] === 'Bounce Blaster' && ((entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed) && (
                       <span style={{ 
                         background: 'rgba(234, 88, 12, 0.2)',
                         borderRadius: '8px',
@@ -1079,7 +1140,7 @@ const Leaderboard = () => {
                         🎯 {(entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed}
                       </span>
                     )}
-                     {selectedGame === 'Candy Crush' && ((entry as any).gameData?.level || (entry as any).bestGame?.data?.level) && (
+                     {gameKeyToName[selectedGame] === 'Candy Crush' && ((entry as any).gameData?.level || (entry as any).bestGame?.data?.level) && (
                       <span style={{ 
                         background: 'rgba(219, 39, 119, 0.2)',
                         borderRadius: '8px',
