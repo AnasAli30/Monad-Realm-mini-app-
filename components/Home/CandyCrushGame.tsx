@@ -1267,6 +1267,183 @@ export default function CandyCrushGame() {
       justifyContent: 'center',
       background: gameInitialized ? 'radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)' : 'linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%)'
     }}>
+      {/* Candy Wonderland Animated Background */}
+      {gameInitialized && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          zIndex: 1,
+          pointerEvents: 'none'
+        }}>
+          {/* Sparkles ✨ */}
+          {Array.from({ length: 12 }, (_, i) => {
+            const size = Math.random() * 6 + 3; // 3-9px sparkles
+            const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
+            const sparkleColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+            return (
+              <div
+                key={`sparkle-${i}`}
+                className="sparkle"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  color: sparkleColor,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `candySparkle ${Math.random() * 4 + 3}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 6}s`,
+                  opacity: Math.random() * 0.7 + 0.3,
+                  textShadow: `0 0 ${size}px ${sparkleColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                ✨
+              </div>
+            );
+          })}
+          
+          {/* Hearts ♥ */}
+          {Array.from({ length: 8 }, (_, i) => {
+            const size = Math.random() * 8 + 4; // 4-12px hearts
+            const pinkColors = ['#ff69b4', '#ff1493', '#ffc0cb', '#ff44ff'];
+            const heartColor = pinkColors[Math.floor(Math.random() * pinkColors.length)];
+            return (
+              <div
+                key={`heart-${i}`}
+                className="heart"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  color: heartColor,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `candyFloat ${Math.random() * 5 + 4}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 8}s`,
+                  opacity: Math.random() * 0.6 + 0.4,
+                  textShadow: `0 0 ${size/2}px ${heartColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                ♥
+              </div>
+            );
+          })}
+          
+          {/* Stars ★ */}
+          {Array.from({ length: 10 }, (_, i) => {
+            const size = Math.random() * 7 + 5; // 5-12px stars
+            const candyColors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44', '#ff44ff', '#ff8844'];
+            const starColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+            return (
+              <div
+                key={`star-${i}`}
+                className="star"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  color: starColor,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `candyTwinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 7}s`,
+                  opacity: Math.random() * 0.8 + 0.2,
+                  textShadow: `0 0 ${size/2}px ${starColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                ★
+              </div>
+            );
+          })}
+          
+          {/* Bubbles ○ */}
+          {Array.from({ length: 6 }, (_, i) => {
+            const size = Math.random() * 10 + 6; // 6-16px bubbles
+            const bubbleColors = ['#ff69b4', '#ffc0cb', '#ffffff', '#f0f8ff'];
+            const bubbleColor = bubbleColors[Math.floor(Math.random() * bubbleColors.length)];
+            return (
+              <div
+                key={`bubble-${i}`}
+                className="bubble"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  color: bubbleColor,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `candyBubble ${Math.random() * 6 + 5}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 10}s`,
+                  opacity: Math.random() * 0.4 + 0.2,
+                  textShadow: `0 0 ${size/3}px ${bubbleColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                ○
+              </div>
+            );
+          })}
+          
+          {/* Floating Candy Emojis */}
+          {Array.from({ length: 4 }, (_, i) => {
+            const size = Math.random() * 6 + 8; // 8-14px candy
+            const candyEmojis = ['🍭', '🍬', '🍫', '🧁'];
+            const candyEmoji = candyEmojis[Math.floor(Math.random() * candyEmojis.length)];
+            return (
+              <div
+                key={`candy-${i}`}
+                className="candy-float"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `candyDrift ${Math.random() * 8 + 6}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 12}s`,
+                  opacity: Math.random() * 0.6 + 0.3,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                {candyEmoji}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
       {/* Candy background during initialization */}
       {!gameInitialized && (
         <div style={{
@@ -1298,7 +1475,8 @@ export default function CandyCrushGame() {
         height: '100%',
         opacity: gameInitialized ? 1 : 0,
         filter: gameOverState ? 'blur(5px)' : 'none',
-        transition: 'opacity 0.3s ease, filter 0.5s ease'
+        transition: 'opacity 0.3s ease, filter 0.5s ease',
+        position: 'relative'
       }} />
       
 
@@ -1472,6 +1650,89 @@ export default function CandyCrushGame() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes candySparkle {
+          0%, 100% { 
+            opacity: 0.3;
+            transform: scale(0.8) rotate(0deg);
+          }
+          25% { 
+            opacity: 0.8;
+            transform: scale(1.2) rotate(90deg);
+          }
+          50% { 
+            opacity: 1;
+            transform: scale(1.5) rotate(180deg);
+          }
+          75% { 
+            opacity: 0.8;
+            transform: scale(1.2) rotate(270deg);
+          }
+        }
+        
+        @keyframes candyFloat {
+          0%, 100% { 
+            opacity: 0.4;
+            transform: translateY(0px) scale(1);
+          }
+          25% { 
+            opacity: 0.7;
+            transform: translateY(-8px) scale(1.1);
+          }
+          50% { 
+            opacity: 1;
+            transform: translateY(-12px) scale(1.2);
+          }
+          75% { 
+            opacity: 0.7;
+            transform: translateY(-8px) scale(1.1);
+          }
+        }
+        
+        @keyframes candyTwinkle {
+          0%, 100% { 
+            opacity: 0.2;
+            transform: scale(1) rotate(0deg);
+          }
+          50% { 
+            opacity: 1;
+            transform: scale(1.3) rotate(180deg);
+          }
+        }
+        
+        @keyframes candyBubble {
+          0%, 100% { 
+            opacity: 0.2;
+            transform: translateY(0px) scale(1);
+          }
+          33% { 
+            opacity: 0.4;
+            transform: translateY(-15px) scale(1.1);
+          }
+          66% { 
+            opacity: 0.6;
+            transform: translateY(-25px) scale(1.2);
+          }
+        }
+        
+        @keyframes candyDrift {
+          0%, 100% { 
+            opacity: 0.3;
+            transform: translateX(0px) translateY(0px) rotate(0deg);
+          }
+          25% { 
+            opacity: 0.6;
+            transform: translateX(10px) translateY(-5px) rotate(90deg);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: translateX(15px) translateY(-10px) rotate(180deg);
+          }
+          75% { 
+            opacity: 0.6;
+            transform: translateX(10px) translateY(-5px) rotate(270deg);
+          }
         }
       `}</style>
     </div>

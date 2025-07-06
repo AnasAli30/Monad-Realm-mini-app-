@@ -188,9 +188,9 @@ const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGam
   loading: () => (
     <DynamicLoader 
       title="Bounce Blaster"
-      subtitle="Loading game..."
+      subtitle=""
       description=""
-      background="linear-gradient(135deg, #001122 0%, #003344 50%, #001122 100%)"
+      background="linear-gradient(180deg, #001122 0%, #f9f7f4 100%)"
       textColor="#ffffff"
     />
   )
@@ -199,7 +199,7 @@ const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGam
 const Leaderboard = dynamic(() => import('@/components/Leaderboard'), { ssr: false });
 
 export function Demo() {
-  const [currentView, setCurrentView] = useState<'menu' | 'singlePlayer' | 'jumpGame' | 'archerGame' | 'candyGame' | 'stoneShooterGame' | 'leaderboard'>('menu');
+  const [currentView, setCurrentView] = useState<'singlePlayer' | 'jumpGame' | 'archerGame' | 'candyGame' | 'stoneShooterGame' | 'leaderboard'>('singlePlayer');
 
   const handleStartJumpGame = () => {
     setCurrentView('jumpGame');
@@ -224,37 +224,17 @@ export function Demo() {
       bottom: 0,
       left: 0,
       right: 0,
-      height: '80px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      height: '64px',
+      background: 'white',
       borderTop: '1px solid rgba(255,255,255,0.1)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-around',
-      padding: '0 20px',
+      justifyContent: 'space-evenly',
+      padding: '0 10px',
       zIndex: 1000,
       boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
     }}>
-      <button
-        onClick={() => setCurrentView('menu')}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'none',
-          border: 'none',
-          color: currentView === 'menu' ? '#ffffff' : 'rgba(255,255,255,0.7)',
-          fontSize: '12px',
-          fontWeight: currentView === 'menu' ? 'bold' : 'normal',
-          cursor: 'pointer',
-          padding: '8px 16px',
-          borderRadius: '12px',
-          transition: 'all 0.3s ease',
-          transform: currentView === 'menu' ? 'translateY(-2px)' : 'none'
-        }}
-      >
-        <div style={{ fontSize: '24px', marginBottom: '4px' }}>🏠</div>
-        <div>Home</div>
-      </button>
+
       
       <button
         onClick={() => setCurrentView('singlePlayer')}
@@ -268,16 +248,61 @@ export function Demo() {
           fontSize: '12px',
           fontWeight: currentView === 'singlePlayer' ? 'bold' : 'normal',
           cursor: 'pointer',
-          padding: '8px 16px',
+          padding: '0px 16px',
           borderRadius: '12px',
           transition: 'all 0.3s ease',
           transform: currentView === 'singlePlayer' ? 'translateY(-2px)' : 'none'
         }}
       >
         <div style={{ fontSize: '24px', marginBottom: '4px' }}>🎮</div>
-        <div>Games</div>
+       
       </button>
       
+      
+      
+      <button
+        disabled
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: '12px',
+          fontWeight: 'normal',
+          cursor: 'not-allowed',
+          padding: '0px 16px',
+          borderRadius: '12px',
+          transition: 'all 0.3s ease',
+          opacity: 0.6
+        }}
+      >
+        <div style={{ fontSize: '24px', marginBottom: '4px' }}>💰</div>
+        
+      </button>
+      
+      <button
+        disabled
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: '12px',
+          fontWeight: 'normal',
+          cursor: 'not-allowed',
+          padding: '0px 16px',
+          borderRadius: '12px',
+          transition: 'all 0.3s ease',
+          opacity: 0.6
+        }}
+      >
+        <div style={{ fontSize: '24px', marginBottom: '4px' }}>⚔️</div>
+       
+      </button>
       <button
         onClick={() => setCurrentView('leaderboard')}
         style={{
@@ -290,14 +315,14 @@ export function Demo() {
           fontSize: '12px',
           fontWeight: currentView === 'leaderboard' ? 'bold' : 'normal',
           cursor: 'pointer',
-          padding: '8px 16px',
+          padding: '0px 16px',
           borderRadius: '12px',
           transition: 'all 0.3s ease',
           transform: currentView === 'leaderboard' ? 'translateY(-2px)' : 'none'
         }}
       >
         <div style={{ fontSize: '24px', marginBottom: '4px' }}>🏆</div>
-        <div>Leaderboard</div>
+      
       </button>
     </div>
   );
@@ -319,7 +344,7 @@ export function Demo() {
       <div style={{ 
         minHeight: '100vh', 
         paddingBottom: '80px', 
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
       }}>
         <Leaderboard />
         <BottomNavbar />
@@ -334,32 +359,92 @@ export function Demo() {
       <div style={{ 
         minHeight: '100vh', 
         paddingBottom: '80px', 
-        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
       }}>
         <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
           <div className="text-center space-y-6">
-            <h1 className="text-4xl font-bold text-gray-800 mb-8">Single Player Games</h1>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <button
                 onClick={handleStartJumpGame}
-                className="w-64 px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                style={{
+                  width: '20rem',
+                  height: '13rem',
+                  padding: '1.5rem 2rem',
+                  background: `url('/images/hop.png')`,
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center bottom',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1.5rem',
+                  borderRadius: '1rem',
+                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+             
               >
-                🎮 Hop Up
+                 {/* Hop Up */}
               </button>
               
               <button
                 onClick={handleStartCandyGame}
-                className="w-64 px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                style={{
+                  width: '20rem',
+                  height: '11rem',
+                  padding: '1.5rem 2rem',
+                  background: `url('/images/mona.png')`,
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center bottom',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1.5rem',
+                  borderRadius: '1rem',
+                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+          
               >
-                🍭 MonaCrush
+                
               </button>
               
               <button
                 onClick={handleStartStoneShooterGame}
-                className="w-64 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                style={{
+                  width: '20rem',
+                  height: '14rem',
+                  padding: '1.5rem 2rem',
+                  background: `url('/images/bouce.png')`,
+                  backgroundSize: 'cover',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'center bottom',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '1.5rem',
+                  borderRadius: '1rem',
+                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                  transform: 'scale(1)',
+                  transition: 'all 0.3s ease',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
               >
-                🎯 Bounce Blaster
               </button>
             </div>
           </div>
@@ -369,30 +454,100 @@ export function Demo() {
     );
   }
 
+  // Default to Games view (singlePlayer)
   return (
     <div style={{ 
       minHeight: '100vh', 
       paddingBottom: '80px', 
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'
+      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
     }}>
       <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
         <div className="text-center space-y-6">
-          <h1 className="text-5xl font-bold text-gray-800 mb-8">Monad Realm</h1>
-          <p className="text-xl text-gray-600 mb-8">Choose your game mode</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-8">Single Player Games</h1>
           
           <div className="space-y-4">
             <button
-              onClick={() => setCurrentView('singlePlayer')}
-              className="w-64 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold text-xl rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+              onClick={handleStartJumpGame}
+              style={{
+                width: '16rem',
+                padding: '1rem 2rem',
+                background: 'linear-gradient(90deg, #0371c3 0%, #0d8ce8 100%)',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.25rem',
+                borderRadius: '0.5rem',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                transform: 'scale(1)',
+                transition: 'all 0.2s ease',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #025ba1 0%, #0b7acc 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #0371c3 0%, #0d8ce8 100%)';
+              }}
             >
-              🎯 Single Player Game
+              🎮 Hop Up
             </button>
             
             <button
-              disabled
-              className="w-64 px-8 py-4 bg-gray-300 text-gray-500 font-bold text-xl rounded-lg shadow-lg cursor-not-allowed opacity-60"
+              onClick={handleStartCandyGame}
+              style={{
+                width: '16rem',
+                padding: '1rem 2rem',
+                background: 'linear-gradient(90deg, #aa1c15 0%, #d4251c 100%)',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.25rem',
+                borderRadius: '0.5rem',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                transform: 'scale(1)',
+                transition: 'all 0.2s ease',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #8b1611 0%, #b01f18 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #aa1c15 0%, #d4251c 100%)';
+              }}
             >
-              🔒 Multiplayer (Coming Soon)
+              🍭 MonaCrush
+            </button>
+            
+            <button
+              onClick={handleStartStoneShooterGame}
+              style={{
+                width: '16rem',
+                padding: '1rem 2rem',
+                background: 'linear-gradient(90deg, #0371c3 0%, #aa1c15 100%)',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.25rem',
+                borderRadius: '0.5rem',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                transform: 'scale(1)',
+                transition: 'all 0.2s ease',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.05)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #025ba1 0%, #8b1611 100%)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.background = 'linear-gradient(90deg, #0371c3 0%, #aa1c15 100%)';
+              }}
+            >
+              🎯 Bounce Blaster
             </button>
           </div>
         </div>

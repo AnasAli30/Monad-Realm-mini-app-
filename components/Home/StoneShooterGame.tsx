@@ -224,9 +224,7 @@ export default function StoneShooterGame() {
     }
 
     function create(this: Phaser.Scene) {
-      // Create background
-      const bg = this.add.rectangle(0, 0, 640, window.innerHeight, 0x001122);
-      bg.setOrigin(0, 0);
+      // Background will be handled by CSS gradient
 
       // Create UI text
       scoreText = this.add.text( 30, 20, 'Score: 0', {
@@ -1168,6 +1166,7 @@ export default function StoneShooterGame() {
       width: 640,
       height: window.innerHeight,
       parent: gameRef.current!,
+      transparent: true, // Make canvas transparent to show CSS background
       physics: {
         default: 'arcade',
         arcade: {
@@ -1222,36 +1221,21 @@ export default function StoneShooterGame() {
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          background: 'linear-gradient(135deg, #001122 0%, #003344 50%, #001122 100%)',
+          background: 'linear-gradient(180deg, #001122 0%, #f9f7f4 100%)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 2000
         }}>
-          <div style={{ textAlign: 'center', color: '#ffffff' }}>
-            <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Bounce Blaster</h1>
-            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#cccccc' }}>Loading game...</p>
-            
-            <div style={{ 
-              width: '320px', 
-              height: '8px', 
-              backgroundColor: '#333333',
-              borderRadius: '4px',
-              margin: '0 auto 2rem',
-              overflow: 'hidden'
-            }}>
-              <div style={{ 
-                width: '100%', 
-                height: '100%', 
-                background: 'linear-gradient(90deg, #00ff00 0%, #ffff00 100%)',
-                borderRadius: '4px',
-                animation: 'pulse 2s ease-in-out infinite'
-              }}></div>
-            </div>
-            
-            <p style={{ fontSize: '0.875rem', color: '#999999' }}>Fast & smooth controls: Tilt phone or ← → arrows, auto-shoots every 0.1s!</p>
-          </div>
+          <img
+            src="/shoot/player-left.png"
+            alt="Player"
+            style={{
+              width: '120px',
+              height: '120px',
+              animation: 'spin 2s linear infinite'
+            }}
+          />
         </div>
       )}
 
@@ -1418,14 +1402,113 @@ export default function StoneShooterGame() {
           left: 0, 
           zIndex: 1000,
           filter: gameOver ? 'blur(2px)' : 'none',
-          transition: 'filter 0.5s ease'
+          transition: 'filter 0.5s ease',
+          background: 'linear-gradient(180deg, #001122 0%, #f9f7f4 100%)'
         }} 
-      />
+      >
+        {/* Animated Stars Background */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          zIndex: -1
+        }}>
+          {/* Generate stars with different sizes and positions */}
+          {Array.from({ length: 50 }, (_, i) => {
+            const size = Math.random() * 8 + 4; // 4-12px stars
+            const starColor = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffff88' : '#88ccff';
+            return (
+              <div
+                key={i}
+                className="star"
+                style={{
+                  position: 'absolute',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  color: starColor,
+                  fontSize: `${size}px`,
+                  lineHeight: '1',
+                  animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                  animationDelay: `${Math.random() * 5}s`,
+                  opacity: Math.random() * 0.8 + 0.2,
+                  textShadow: `0 0 ${size/2}px ${starColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                ★
+              </div>
+            );
+          })}
+          
+          {/* Shooting stars */}
+          {Array.from({ length: 3 }, (_, i) => (
+            <div
+              key={`shooting-${i}`}
+              className="shooting-star"
+              style={{
+                position: 'absolute',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 50}%`,
+                width: '12px',
+                height: '12px',
+                color: '#ffffff',
+                fontSize: '12px',
+                lineHeight: '1',
+                animation: `shoot ${Math.random() * 15 + 10}s linear infinite`,
+                animationDelay: `${Math.random() * 10}s`,
+                opacity: 0.9,
+                textShadow: '0 0 8px #ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none'
+              }}
+            >
+              ★
+            </div>
+          ))}
+        </div>
+      </div>
 
       <style jsx>{`
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes twinkle {
+          0%, 100% { 
+            opacity: 0.2;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
+        @keyframes shoot {
+          0% {
+            transform: translateX(0) translateY(0);
+            opacity: 1;
+          }
+          70% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(-100vw) translateY(100vh);
+            opacity: 0;
+          }
         }
       `}</style>
     </>
