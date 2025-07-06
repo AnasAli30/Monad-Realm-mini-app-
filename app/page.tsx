@@ -3,7 +3,7 @@ import App from '@/components/pages/app'
 import { APP_URL } from '@/lib/constants'
 
 export async function generateMetadata({ searchParams }: { searchParams?: Record<string, string> }): Promise<Metadata> {
-  const { score, time, userImg, username, gameType, level, moves } = searchParams || {};
+  const { score, time, userImg, username, gameType, level, moves, stonesDestroyed, playerHits } = searchParams || {};
   
   // Default image and frame
   let imageUrl = `${APP_URL}/images/feed.png`;
@@ -50,6 +50,20 @@ export async function generateMetadata({ searchParams }: { searchParams?: Record
     });
     
     imageUrl = `${APP_URL}/api/og-image-candy?${params.toString()}`;
+  }
+
+  // If we have stone shooter game data, generate dynamic image
+  if (score && time && stonesDestroyed && playerHits && gameType === 'stone-shooter') {
+    const params = new URLSearchParams({
+      score,
+      time,
+      stonesDestroyed,
+      playerHits,
+      gameType,
+      ...(userImg && { userImg }),
+      ...(username && { username }),
+    });
+    imageUrl = `${APP_URL}/api/og-image-stoneshooter?${params.toString()}`;
   }
 
   const frame = {

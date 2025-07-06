@@ -595,19 +595,22 @@ export default function StoneShooterGame() {
         
         // Submit score to leaderboard
         const playerData = getPlayerData(context);
-        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Bounce Blaster', {
-          time: formattedTime,
-          stonesDestroyed,
-          playerHits
-        }).then(result => {
-          if (result.success) {
-            console.log('Score submitted successfully:', result.data);
-          } else {
-            console.log('Failed to submit score:', result.error);
-          }
-        }).catch(error => {
-          console.error('Error submitting score:', error);
+        const shareParams = new URLSearchParams({
+          score: gameOverData.score.toString(),
+          time: gameOverData.time,
+          stonesDestroyed: gameOverData.stonesDestroyed.toString(),
+          playerHits: gameOverData.playerHits.toString(),
+          gameType: 'stone-shooter',
+          ...(playerData.username && { username: playerData.username }),
+          ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
         });
+        const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+        if (actions && actions.composeCast) {
+          await actions.composeCast({
+            text: shareText,
+            embeds: [shareUrl],
+          });
+        }
         
         // Play game over sound with proper scene reference
         try {
@@ -1307,10 +1310,21 @@ export default function StoneShooterGame() {
                 
                 const shareText = `🎯 Just scored ${gameOverData.score} points in Bounce Blaster! 💥\n\nDestroyed ${gameOverData.stonesDestroyed} stones and survived ${gameOverData.playerHits} hits!${improvementText}\n\nCan you beat my score?`;
                 
+                const playerData = getPlayerData(context);
+                const shareParams = new URLSearchParams({
+                  score: gameOverData.score.toString(),
+                  time: gameOverData.time,
+                  stonesDestroyed: gameOverData.stonesDestroyed.toString(),
+                  playerHits: gameOverData.playerHits.toString(),
+                  gameType: 'stone-shooter',
+                  ...(playerData.username && { username: playerData.username }),
+                  ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+                });
+                const shareUrl = `${APP_URL}?${shareParams.toString()}`;
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
-                    embeds: [`${APP_URL}`],
+                    embeds: [shareUrl],
                   });
                 }
               } catch (error) {

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const levelX = '698';
     const levelY = '46';
     const usernameX = '653';
-    const usernameY = '180';
+    const usernameY = '190';
 
     // Size parameters with updated defaults
     const pfpRadius = 50;
