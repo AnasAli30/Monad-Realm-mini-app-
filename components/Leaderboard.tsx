@@ -45,7 +45,9 @@ const Leaderboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'idle'>('enter');
   const [showRewardPopup, setShowRewardPopup] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({ days: 7, hours: 0 });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0 });
+  const [timer, setTimer] = useState<number | string | null>(null);
+  const [timerLoading, setTimerLoading] = useState(true);
 
   const gameTabs = [
     { key: 'hop', label: 'Hop Up', icon: faArrowUp },
@@ -96,6 +98,43 @@ const Leaderboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch timer from API
+  useEffect(() => {
+    setTimerLoading(true);
+    fetch('/api/leaderboard/timer')
+      .then(res => res.json())
+      .then(data => {
+        console.log(data);
+        if (data.success) {
+
+          setTimer(data.timer);
+        } else {
+          setTimer(null);
+        }
+      })
+      .catch(() => setTimer(null))
+      .finally(() => setTimerLoading(false));
+  }, []);
+
+  // Update timeLeft based on timer value
+  useEffect(() => {
+    if (!timer) return;
+    // If timer is in ms, use: const target = Number(timer);
+    // If timer is in seconds, use: const target = Number(timer) * 1000;
+    const target = Number(timer) * 1000; // convert to ms
+    const update = () => {
+      const now = Date.now();
+      let diff = target - now;
+      if (diff < 0) diff = 0;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      setTimeLeft({ days, hours });
+    };
+    update();
+    const interval = setInterval(update, 60 * 1000); // update every minute
+    return () => clearInterval(interval);
+  }, [timer]);
+
   const fetchLeaderboard = async () => {
     try {
       setIsLoading(true);
@@ -136,6 +175,21 @@ const Leaderboard = () => {
       return 'Unknown';
     }
   };
+
+  // Helper to format unix time (seconds or ms) to mm:ss or hh:mm:ss
+  function formatTimer(unixTime: number | string | undefined): string {
+    if (!unixTime) return '';
+    let seconds = typeof unixTime === 'string' ? parseInt(unixTime, 10) : unixTime;
+    // If it's in ms, convert to seconds
+    if (seconds > 100000000) seconds = Math.floor(seconds / 1000);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
 
   const getCardStyle = (rank: number): React.CSSProperties => {
     const baseStyle: React.CSSProperties = {
@@ -998,6 +1052,7 @@ const Leaderboard = () => {
 
       {/* Leaderboard Entries */}
       <div style={{ position: 'relative', zIndex: 1 }}>
+        
         {leaderboardData.length === 0 ? (
           <div style={{ 
             textAlign: 'center', 
@@ -1118,7 +1173,7 @@ const Leaderboard = () => {
                         fontSize: '11px',
                         color: '#93c5fd'
                       }}>
-                        ⏱️ {(entry as any).gameData?.time || (entry as any).bestGame?.data?.time}
+                        ⏱️ {formatTimer((entry as any).gameData?.time || (entry as any).bestGame?.data?.time)}
                       </span>
                     )}
                     

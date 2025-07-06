@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import { keccak256, toUtf8Bytes } from 'ethers';
 
 // MongoDB connection
@@ -270,5 +270,24 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Failed to submit score' },
       { status: 500 }
     );
+  }
+}
+
+// Custom GET endpoint for timer extraction
+export async function timer(request: NextRequest) {
+  try {
+    // Hardcoded ObjectId as per user request
+    const objectId = '686aba24a8c9e9ed61f288dc';
+    const database = await connectToDatabase();
+    const collection: Collection<any> = database.collection('data');
+    const doc = await collection.findOne({ _id: objectId });
+    console.log(doc);
+    if (!doc || typeof doc.time === 'undefined') {
+      return NextResponse.json({ success: false, error: 'Timer not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, timer: doc.time });
+  } catch (error) {
+    console.error('Error fetching timer:', error);
+    return NextResponse.json({ success: false, error: 'Failed to fetch timer' }, { status: 500 });
   }
 } 

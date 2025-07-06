@@ -334,12 +334,13 @@ export function Demo() {
       left: 0,
       right: 0,
       height: '64px',
+      // width: '100vw',
       background: 'white',
       borderTop: '1px solid rgba(255,255,255,0.1)',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-evenly',
-      padding: '0px 10px',
+      justifyContent: 'space-around',
+      padding: '0px 0px',
       zIndex: 1000,
       boxShadow: '0 -4px 20px rgba(0,0,0,0.1)'
     }}>
@@ -430,9 +431,10 @@ export function Demo() {
   if (currentTab === 'game') {
     return (
       <div style={{ 
-        paddingTop: '0px',
+        paddingTop: '10px',
+        // paddingBottom: '20px',
         minHeight: '100vh',
-        paddingBottom: '50px', 
+        paddingBottom: '60px', 
         background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
       }}>
         <div className="flex min-h-screen flex-col items-center justify-center">
@@ -444,8 +446,9 @@ export function Demo() {
                 style={{
                   width: '20rem',
                   height: '13rem',
-                  padding: '0rem 2rem',
+                  padding: '0', // removed left/right padding
                   marginTop: '0rem',
+                  // paddingBottom: '1rem',
                   background: `url('/images/hop.png')`,
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
@@ -455,7 +458,7 @@ export function Demo() {
                   fontSize: '1.5rem',
                   borderRadius: '1rem',
                   boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
-                  transform: 'scale(1)',
+                  transform: 'scale(1.1)',
                   transition: 'all 0.3s ease',
                   border: 'none',
                   cursor: 'pointer',
@@ -471,9 +474,9 @@ export function Demo() {
               <button
                 onClick={() => setSelectedGame('candy')}
                 style={{
-                  width: '20rem',
+                  width: '22rem',
                   height: '11rem',
-                  padding: '1.5rem 2rem',
+                  padding: '0', // removed left/right padding
                   background: `url('/images/mona.png')`,
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
@@ -499,9 +502,9 @@ export function Demo() {
               <button
                 onClick={() => setSelectedGame('blaster')}
                 style={{
-                  width: '20rem',
+                  width: '22rem',
                   height: '14rem',
-                  padding: '1.5rem 2rem',
+                  padding: '0', // removed left/right padding
                   background: `url('/images/bouce.png')`,
                   backgroundSize: 'cover',
                   backgroundRepeat: 'no-repeat',
