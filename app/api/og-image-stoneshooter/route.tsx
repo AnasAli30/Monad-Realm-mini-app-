@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const timeY = 330;
     const stonesX = 700;
     const stonesY = 400;
-    const hitsX = 800;
+    const hitsX = 700;
     const hitsY = 470;
     const fontSize = 48;
     const labelFontSize = 40;
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
-            <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Score</span>
+            <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Score :</span>
             {score}
             
           </div>
@@ -138,8 +138,8 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
-             <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Time</span>
-            {time}
+             <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Time :</span>
+            {time.split(':')[0]}:{time.split(':')[1]}
            
           </div>
 
@@ -157,29 +157,12 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
-                <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Stones</span>
+                <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Kills :</span>
             {stonesDestroyed}
         
           </div>
 
-          {/* Player Hits */}
-          <div
-            style={{
-              position: 'absolute',
-              top: `${hitsY}px`,
-              left: `${hitsX}px`,
-              color: '#fff',
-              fontSize: `${fontSize}px`,
-              fontWeight: 'bold',
-              textShadow: '2px 2px 4px #000',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-              <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Hits</span>
-            {playerHits}
-          
-          </div>
+      
         </div>
       ),
       {
