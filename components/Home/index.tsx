@@ -1,5 +1,6 @@
 'use client'
 
+import { sdk } from '@farcaster/miniapp-sdk'
 
 import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
@@ -7,6 +8,8 @@ import { useFrame } from '@/components/farcaster-provider';
 import { SafeAreaContainer } from '@/components/safe-area-container';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGamepad as faGamepadSolid, faCoins, faUsers, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { useAccount, useSwitchChain } from 'wagmi';
+import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 
 // Dynamic Loading Component
 const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
@@ -258,12 +261,19 @@ export function Demo() {
   const { context } = useFrame();
   const [currentTab, setCurrentTab] = useState<'game' | 'earn' | 'pvp' | 'leaderboard'>('game');
   const [selectedGame, setSelectedGame] = useState<null | 'hop' | 'candy' | 'blaster'>(null);
+  const { actions } = useMiniAppContext();
+  const { switchChain } = useSwitchChain();
+  const {isConnected} = useAccount()
   const [imagesLoaded, setImagesLoaded] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('monad-images-loaded') === 'true';
     }
     return false;
   });
+
+  useEffect(()=>{
+    actions?.addFrame()
+  },[isConnected,context])
 
   // Preload game images only if not already loaded
   useEffect(() => {
