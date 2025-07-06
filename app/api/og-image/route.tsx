@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Get the full URL for the background image
     const baseUrl = new URL(request.url).origin;
     const backgroundImage = gameType === 'vertical-jump' 
-      ? `${baseUrl}/images/hop.png` 
+      ? `${baseUrl}/og/hop.png` 
       : `${baseUrl}/images/feed.png`;
 
     return new ImageResponse(
