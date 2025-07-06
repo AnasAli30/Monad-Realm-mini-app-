@@ -105,27 +105,10 @@ export async function GET(request: NextRequest) {
               justifyContent: 'center',
             }}
           >
-            {parseInt(score).toLocaleString()}
+           Score: {parseInt(score).toLocaleString()}
           </div>
 
-          {/* Moves */}
-          <div
-            style={{
-              position: 'absolute',
-              top: `${movesY}px`,
-              left: `${movesX}px`,
-              color: '#000000',
-              fontSize: `${movesFontSize}px`,
-              fontWeight: 'bold',
-              textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
-              display: 'flex',
-              textAlign: 'center',
-              width: '100px',
-              justifyContent: 'center',
-            }}
-          >
-            {moves}
-          </div>
+         
 
           {/* Level */}
           <div
@@ -143,7 +126,7 @@ export async function GET(request: NextRequest) {
               justifyContent: 'center',
             }}
           >
-            {level}
+          <span style={{fontWeight: 'bold'}}>Level: {level}</span>
           </div>
 
           {/* Username */}
