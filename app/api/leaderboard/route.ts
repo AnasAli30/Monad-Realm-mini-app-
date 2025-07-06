@@ -170,13 +170,16 @@ export async function POST(request: NextRequest) {
     // Try to find existing player
     const existingPlayer = await collection.findOne({ fid });
 
-    if (existingPlayer) {
-      // Check if new score is better than existing score
-      const currentGameData = existingPlayer.games[sanitizedGame];
-      const shouldUpdate = !currentGameData || sanitizedScore > currentGameData.score;
+    // Ensure games object exists
+    let playerGames = existingPlayer?.games || {};
 
+    // Check if new score is better than existing score or if game entry does not exist
+    const currentGameData = playerGames[sanitizedGame];
+    const shouldUpdate = !currentGameData || sanitizedScore > currentGameData.score;
+
+    if (existingPlayer) {
       if (shouldUpdate) {
-        // Update player with new best score
+        // Update player with new best score or create new game entry
         const result = await collection.updateOne(
           { fid },
           {
@@ -199,42 +202,18 @@ export async function POST(request: NextRequest) {
           data: {
             fid,
             username: sanitizedUsername,
-            game: sanitizedGame,
+            pfpUrl: pfpUrl || existingPlayer.pfpUrl,
             score: sanitizedScore,
-            rank,
-            isNewRecord: true,
-            previousBest: currentGameData?.score || 0
+            game: sanitizedGame,
+            rank
           }
         });
       } else {
-        // Score not better, but update last played
-        await collection.updateOne(
-          { fid },
-          {
-            $set: {
-              username: sanitizedUsername,
-              pfpUrl: pfpUrl || existingPlayer.pfpUrl,
-              [`games.${sanitizedGame}.lastPlayed`]: new Date(),
-              updatedAt: new Date()
-            }
-          }
-        );
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            fid,
-            username: sanitizedUsername,
-            game: sanitizedGame,
-            score: sanitizedScore,
-            rank: null,
-            isNewRecord: false,
-            currentBest: currentGameData.score
-          }
-        });
+        // Score not higher, do not update
+        return NextResponse.json({ success: true, data: { fid, username: sanitizedUsername, pfpUrl: pfpUrl || existingPlayer.pfpUrl, score: sanitizedScore, game: sanitizedGame, rank: null } });
       }
     } else {
-      // Create new player document
+      // Player does not exist, create new player with this game entry
       const newPlayer: PlayerDocument = {
         fid,
         username: sanitizedUsername,
@@ -245,27 +224,8 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-
-      const result = await collection.insertOne(newPlayer);
-
-      // Get player's rank
-      const rank = await collection.countDocuments({
-        [`games.${sanitizedGame}.score`]: { $gt: sanitizedScore }
-      }) + 1;
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          id: result.insertedId,
-          fid,
-          username: sanitizedUsername,
-          game: sanitizedGame,
-          score: sanitizedScore,
-          rank,
-          isNewRecord: true,
-          previousBest: 0
-        }
-      });
+      await collection.insertOne(newPlayer);
+      return NextResponse.json({ success: true, data: { fid, username: sanitizedUsername, pfpUrl: pfpUrl || '', score: sanitizedScore, game: sanitizedGame, rank: 1 } });
     }
 
   } catch (error) {
