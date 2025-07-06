@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const score = searchParams.get('score') || '0';
   const time = searchParams.get('time') || '00:00';
   const userImg = searchParams.get('userImg') || '';
+  const username = searchParams.get('username') || 'Player';
   const gameType = searchParams.get('gameType') || 'vertical-jump';
   
   // Position parameters with defaults
@@ -16,10 +17,21 @@ export async function GET(request: NextRequest) {
   const timeX = parseInt(searchParams.get('timeX') || '534');
   const timeY = parseInt(searchParams.get('timeY') || '400');
 
+  // New label and username positions
+  const scoreLabelX = parseInt(searchParams.get('scoreLabelX') || '610');
+  const scoreLabelY = parseInt(searchParams.get('scoreLabelY') || '200');
+  const timeLabelX = parseInt(searchParams.get('timeLabelX') || '534');
+  const timeLabelY = parseInt(searchParams.get('timeLabelY') || '430');
+  const usernameX = parseInt(searchParams.get('usernameX') || '400');
+  const usernameY = parseInt(searchParams.get('usernameY') || '500');
+
   // Size parameters with defaults
   const pfpRadius = parseInt(searchParams.get('pfpRadius') || '110');
   const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '54');
   const timeFontSize = parseInt(searchParams.get('timeFontSize') || '48');
+  const scoreLabelFontSize = parseInt(searchParams.get('scoreLabelFontSize') || '18');
+  const timeLabelFontSize = parseInt(searchParams.get('timeLabelFontSize') || '18');
+  const usernameFontSize = parseInt(searchParams.get('usernameFontSize') || '24');
 
   // Return HTML that generates the image using Canvas
   const html = `
@@ -79,7 +91,7 @@ export async function GET(request: NextRequest) {
       <div class="container">
         <h1>🎮 Generated Image Preview</h1>
         <div class="info">
-          <p><strong>Score:</strong> ${score} | <strong>Time:</strong> ${time}</p>
+          <p><strong>Score:</strong> ${score} | <strong>Time:</strong> ${time} | <strong>Username:</strong> ${username}</p>
         </div>
         
         <canvas id="canvas" width="1200" height="630"></canvas>
@@ -87,15 +99,17 @@ export async function GET(request: NextRequest) {
         <div class="coords">
           <h3>📍 Current Positions:</h3>
           <p><strong>Profile Picture:</strong> (${pfpX}, ${pfpY})</p>
-          <p><strong>Score:</strong> (${scoreX}, ${scoreY})</p>
-          <p><strong>Time:</strong> (${timeX}, ${timeY})</p>
+          <p><strong>Score Number:</strong> (${scoreX}, ${scoreY}) | <strong>Score Label:</strong> (${scoreLabelX}, ${scoreLabelY})</p>
+          <p><strong>Time Number:</strong> (${timeX}, ${timeY}) | <strong>Time Label:</strong> (${timeLabelX}, ${timeLabelY})</p>
+          <p><strong>Username:</strong> (${usernameX}, ${usernameY})</p>
         </div>
 
         <div class="settings">
           <h3>📏 Current Sizes:</h3>
           <p><strong>Profile Picture:</strong> ${pfpRadius}px radius (${pfpRadius * 2}px diameter)</p>
-          <p><strong>Score Font:</strong> ${scoreFontSize}px</p>
-          <p><strong>Time Font:</strong> ${timeFontSize}px</p>
+          <p><strong>Score:</strong> Number ${scoreFontSize}px | Label ${scoreLabelFontSize}px</p>
+          <p><strong>Time:</strong> Number ${timeFontSize}px | Label ${timeLabelFontSize}px</p>
+          <p><strong>Username:</strong> ${usernameFontSize}px</p>
         </div>
         
         <div class="info">
@@ -113,14 +127,20 @@ export async function GET(request: NextRequest) {
         const positions = {
           pfp: { x: ${pfpX}, y: ${pfpY} },
           score: { x: ${scoreX}, y: ${scoreY} },
-          time: { x: ${timeX}, y: ${timeY} }
+          time: { x: ${timeX}, y: ${timeY} },
+          scoreLabel: { x: ${scoreLabelX}, y: ${scoreLabelY} },
+          timeLabel: { x: ${timeLabelX}, y: ${timeLabelY} },
+          username: { x: ${usernameX}, y: ${usernameY} }
         };
 
         // Size variables from URL
         const sizes = {
           pfpRadius: ${pfpRadius},
           scoreFontSize: ${scoreFontSize},
-          timeFontSize: ${timeFontSize}
+          timeFontSize: ${timeFontSize},
+          scoreLabelFontSize: ${scoreLabelFontSize},
+          timeLabelFontSize: ${timeLabelFontSize},
+          usernameFontSize: ${usernameFontSize}
         };
         
         function generateImage() {
@@ -151,21 +171,33 @@ export async function GET(request: NextRequest) {
         }
         
         function addTextOverlays() {
-          // Score
+          // Set common text properties
           ctx.fillStyle = '#ffffff';
-          ctx.font = \`bold \${sizes.scoreFontSize}px Arial\`;
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.8)';
           ctx.shadowBlur = 4;
           ctx.shadowOffsetX = 2;
           ctx.shadowOffsetY = 2;
           
-          // Use dynamic positions and sizes
+          // Score Number
+          ctx.font = \`bold \${sizes.scoreFontSize}px Arial\`;
           ctx.fillText('${parseInt(score).toLocaleString()}', positions.score.x, positions.score.y);
           
-          // Time
+          // Score Label
+          ctx.font = \`bold \${sizes.scoreLabelFontSize}px Arial\`;
+          ctx.fillText('SCORE', positions.scoreLabel.x, positions.scoreLabel.y);
+          
+          // Time Number
           ctx.font = \`bold \${sizes.timeFontSize}px Arial\`;
           ctx.fillText('${time}', positions.time.x, positions.time.y);
+          
+          // Time Label
+          ctx.font = \`bold \${sizes.timeLabelFontSize}px Arial\`;
+          ctx.fillText('TIME', positions.timeLabel.x, positions.timeLabel.y);
+          
+          // Username
+          ctx.font = \`bold \${sizes.usernameFontSize}px Arial\`;
+          ctx.fillText('${username}', positions.username.x, positions.username.y);
           
           // Reset shadow
           ctx.shadowColor = 'transparent';

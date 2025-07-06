@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const score = searchParams.get('score') || '0';
     const time = searchParams.get('time') || '00:00';
     const userImg = searchParams.get('userImg') || '';
+    const username = searchParams.get('username') || 'Player';
     const gameType = searchParams.get('gameType') || 'vertical-jump';
     
     // Position parameters with defaults
@@ -20,10 +21,21 @@ export async function GET(request: NextRequest) {
     const timeX = parseInt(searchParams.get('timeX') || '534');
     const timeY = parseInt(searchParams.get('timeY') || '400');
 
+    // New label and username positions
+    const scoreLabelX = parseInt(searchParams.get('scoreLabelX') || '622');
+    const scoreLabelY = parseInt(searchParams.get('scoreLabelY') || '237');
+    const timeLabelX = parseInt(searchParams.get('timeLabelX') || '542');
+    const timeLabelY = parseInt(searchParams.get('timeLabelY') || '459');
+    const usernameX = parseInt(searchParams.get('usernameX') || '282');
+    const usernameY = parseInt(searchParams.get('usernameY') || '562');
+
     // Size parameters with defaults
     const pfpRadius = parseInt(searchParams.get('pfpRadius') || '110');
     const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '54');
     const timeFontSize = parseInt(searchParams.get('timeFontSize') || '48');
+    const scoreLabelFontSize = parseInt(searchParams.get('scoreLabelFontSize') || '32');
+    const timeLabelFontSize = parseInt(searchParams.get('timeLabelFontSize') || '32');
+    const usernameFontSize = parseInt(searchParams.get('usernameFontSize') || '39');
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
@@ -82,7 +94,7 @@ export async function GET(request: NextRequest) {
             </div>
           )}
 
-          {/* Score */}
+          {/* Score Number */}
           <div
             style={{
               position: 'absolute',
@@ -101,7 +113,26 @@ export async function GET(request: NextRequest) {
             {parseInt(score).toLocaleString()}
           </div>
 
-          {/* Time */}
+          {/* Score Label */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `${scoreLabelY}px`,
+              left: `${scoreLabelX}px`,
+              color: '#ffffff',
+              fontSize: `${scoreLabelFontSize}px`,
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              display: 'flex',
+              textAlign: 'center',
+              width: '120px',
+              justifyContent: 'center',
+            }}
+          >
+            SCORE
+          </div>
+
+          {/* Time Number */}
           <div
             style={{
               position: 'absolute',
@@ -118,6 +149,44 @@ export async function GET(request: NextRequest) {
             }}
           >
             {time}
+          </div>
+
+          {/* Time Label */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `${timeLabelY}px`,
+              left: `${timeLabelX}px`,
+              color: '#ffffff',
+              fontSize: `${timeLabelFontSize}px`,
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              display: 'flex',
+              textAlign: 'center',
+              width: '120px',
+              justifyContent: 'center',
+            }}
+          >
+            TIME
+          </div>
+
+          {/* Username */}
+          <div
+            style={{
+              position: 'absolute',
+              top: `${usernameY}px`,
+              left: `${usernameX}px`,
+              color: '#ffffff',
+              fontSize: `${usernameFontSize}px`,
+              fontWeight: 'bold',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+              display: 'flex',
+              textAlign: 'center',
+              width: '200px',
+              justifyContent: 'center',
+            }}
+          >
+            {username}
           </div>
         </div>
       ),
