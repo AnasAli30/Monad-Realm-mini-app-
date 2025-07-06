@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const usernameY = '180';
 
     // Size parameters with updated defaults
-    const pfpRadius = '50';
+    const pfpRadius = 50;
     const scoreFontSize = '48';
     const levelFontSize = '48';
     const usernameFontSize = '43';
