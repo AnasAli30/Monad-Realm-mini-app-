@@ -1524,10 +1524,24 @@ export default function VerticalJumperGame() {
                 
                 const shareText = `🎮 Just scored ${gameOverData.score} points in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Monad Jump! 🚀${improvementText}\n\nCan you beat my score?`;
                 
+                // Get player data for dynamic image
+                const playerData = getPlayerData(context);
+                
+                // Create dynamic share URL with score data
+                const shareParams = new URLSearchParams({
+                  score: gameOverData.score.toString(),
+                  time: gameOverData.time,
+                  gameType: 'vertical-jump',
+                  ...(playerData.username && { username: playerData.username }),
+                  ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+                });
+                
+                const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+                
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
-                    embeds: [`${APP_URL}`],
+                    embeds: [shareUrl],
                   });
                 } 
               } catch (error) {
