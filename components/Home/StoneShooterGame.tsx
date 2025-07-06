@@ -605,12 +605,7 @@ export default function StoneShooterGame() {
           ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
         });
         const shareUrl = `${APP_URL}?${shareParams.toString()}`;
-        if (actions && actions.composeCast) {
-          await actions.composeCast({
-            text: shareText,
-            embeds: [shareUrl],
-          });
-        }
+       
         
         // Play game over sound with proper scene reference
         try {
