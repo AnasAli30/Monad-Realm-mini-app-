@@ -7,7 +7,11 @@ import { APP_URL } from '@/lib/constants';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { submitScore, getPlayerData } from '@/lib/leaderboard';
 
-export default function CandyCrushGame({ onBack }) {
+interface CandyCrushGameProps {
+  onBack?: () => void;
+}
+
+export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
