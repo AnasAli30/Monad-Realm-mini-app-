@@ -30,6 +30,23 @@ export async function generateMetadata({ searchParams }: { searchParams?: Record
       level,
       moves,
       gameType,
+      // Updated positions for Candy Crush
+      pfpX: '531',
+      pfpY: '192',
+      scoreX: '493',
+      scoreY: '46',
+      movesX: '698',
+      movesY: '101',
+      levelX: '541',
+      levelY: '300',
+      usernameX: '653',
+      usernameY: '198',
+      // Updated sizes for Candy Crush
+      pfpRadius: '50',
+      scoreFontSize: '37',
+      movesFontSize: '48',
+      levelFontSize: '48',
+      usernameFontSize: '43',
       ...(userImg && { userImg }),
       ...(username && { username }),
     });
