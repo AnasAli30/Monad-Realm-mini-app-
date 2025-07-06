@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Get the full URL for the background image
     const baseUrl = new URL(request.url).origin;
     const backgroundImage = gameType === 'vertical-jump' 
-      ? `${baseUrl}/og/hop.png` 
+      ? `${baseUrl}/images/hop.png` 
       : `${baseUrl}/images/feed.png`;
 
     return new ImageResponse(
@@ -31,9 +31,10 @@ export async function GET(request: NextRequest) {
             display: 'flex',
             position: 'relative',
             backgroundImage: `url(${backgroundImage})`,
-            backgroundSize: 'cover',
+            backgroundSize: 'contain',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
+            backgroundColor: '#1e40af',
           }}
         >
           {/* Profile Picture - Replace character face (positioned where the character's face is) */}
