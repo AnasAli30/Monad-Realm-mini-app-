@@ -20,14 +20,14 @@ export async function GET(request: NextRequest) {
     const pfpRadius = 60;
     const usernameX = 170;
     const usernameY = 90;
-    const scoreX = 900;
-    const scoreY = 80;
+    const scoreX = 800;
+    const scoreY = 90;
     const timeX = 900;
-    const timeY = 160;
+    const timeY = 170;
     const stonesX = 900;
-    const stonesY = 240;
-    const hitsX = 900;
-    const hitsY = 320;
+    const stonesY = 250;
+    const hitsX = 800;
+    const hitsY = 330;
     const fontSize = 48;
     const labelFontSize = 28;
 
@@ -119,8 +119,9 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
-            {score}
             <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Score</span>
+            {score}
+            
           </div>
 
           {/* Time */}
@@ -137,8 +138,9 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
+             <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Time</span>
             {time}
-            <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Time</span>
+           
           </div>
 
           {/* Stones Destroyed */}
@@ -155,8 +157,9 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
+                <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Stones</span>
             {stonesDestroyed}
-            <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Stones</span>
+        
           </div>
 
           {/* Player Hits */}
@@ -173,8 +176,9 @@ export async function GET(request: NextRequest) {
               alignItems: 'center',
             }}
           >
+              <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Hits</span>
             {playerHits}
-            <span style={{ fontSize: `${labelFontSize}px`, marginLeft: 12, color: '#ffd700' }}>Hits</span>
+          
           </div>
         </div>
       ),
