@@ -14,23 +14,20 @@ export async function GET(request: NextRequest) {
     const username = searchParams.get('username') || 'Player';
     
     // Position parameters with updated defaults for Candy Crush layout
-    const pfpX = parseInt(searchParams.get('pfpX') || '531');
-    const pfpY = parseInt(searchParams.get('pfpY') || '192');
-    const scoreX = parseInt(searchParams.get('scoreX') || '493');
-    const scoreY = parseInt(searchParams.get('scoreY') || '46');
-    const movesX = parseInt(searchParams.get('movesX') || '698');
-    const movesY = parseInt(searchParams.get('movesY') || '101');
-    const levelX = parseInt(searchParams.get('levelX') || '541');
-    const levelY = parseInt(searchParams.get('levelY') || '300');
-    const usernameX = parseInt(searchParams.get('usernameX') || '653');
-    const usernameY = parseInt(searchParams.get('usernameY') || '198');
+    const pfpX = '531';
+    const pfpY = '192';
+    const scoreX = '293';
+    const scoreY = '46';
+    const levelX = '698';
+    const levelY = '46';
+    const usernameX = '653';
+    const usernameY = '180';
 
     // Size parameters with updated defaults
-    const pfpRadius = parseInt(searchParams.get('pfpRadius') || '50');
-    const scoreFontSize = parseInt(searchParams.get('scoreFontSize') || '37');
-    const movesFontSize = parseInt(searchParams.get('movesFontSize') || '48');
-    const levelFontSize = parseInt(searchParams.get('levelFontSize') || '48');
-    const usernameFontSize = parseInt(searchParams.get('usernameFontSize') || '43');
+    const pfpRadius = '50';
+    const scoreFontSize = '48';
+    const levelFontSize = '48';
+    const usernameFontSize = '43';
 
     // Get the base URL for the background image
     const baseUrl = new URL(request.url).origin;
@@ -101,7 +98,7 @@ export async function GET(request: NextRequest) {
               textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '150px',
+              width: '100%',
               justifyContent: 'center',
             }}
           >
@@ -122,11 +119,11 @@ export async function GET(request: NextRequest) {
               textShadow: '2px 2px 4px rgba(255,255,255,0.8)',
               display: 'flex',
               textAlign: 'center',
-              width: '100px',
+              width: '200px',
               justifyContent: 'center',
             }}
           >
-          <span style={{fontWeight: 'bold'}}>Level: {level}</span>
+          Level:{level}
           </div>
 
           {/* Username */}
