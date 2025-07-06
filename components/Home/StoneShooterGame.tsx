@@ -584,6 +584,21 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         
         if (score > maxScore) {
           localStorage.setItem('stoneShooterMaxScore', score.toString());
+          // Submit score to leaderboard when new high score is achieved
+          const playerData = getPlayerData(context);
+          submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Bounce Blaster', {
+            time: formattedTime,
+            stonesDestroyed,
+            playerHits
+          }).then(result => {
+            if (result.success) {
+              console.log('Score submitted successfully:', result.data);
+            } else {
+              console.log('Failed to submit score:', result.error);
+            }
+          }).catch(error => {
+            console.error('Error submitting score:', error);
+          });
         }
         
         setGameOverData({
