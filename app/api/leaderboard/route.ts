@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { fid, username, pfpUrl, score, game, gameData, randomKey, fusedKey } = body;
-
+    console.log(body);
     // Verification logic
     if (!randomKey || !fusedKey) {
       return NextResponse.json({ success: false, error: 'Missing verification keys' }, { status: 400 });

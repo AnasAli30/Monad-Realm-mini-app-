@@ -582,23 +582,24 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         const maxScore = parseInt(localStorage.getItem('stoneShooterMaxScore') || '0');
         
+        // Always submit score to leaderboard when game is over
+        const playerData = getPlayerData(context);
+        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Bounce Blaster', {
+          time: formattedTime,
+          stonesDestroyed,
+          playerHits
+        }).then(result => {
+          if (result.success) {
+            console.log('Score submitted successfully:', result.data);
+          } else {
+            console.log('Failed to submit score:', result.error);
+          }
+        }).catch(error => {
+          console.error('Error submitting score:', error);
+        });
+
         if (score > maxScore) {
           localStorage.setItem('stoneShooterMaxScore', score.toString());
-          // Submit score to leaderboard when new high score is achieved
-          const playerData = getPlayerData(context);
-          submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Bounce Blaster', {
-            time: formattedTime,
-            stonesDestroyed,
-            playerHits
-          }).then(result => {
-            if (result.success) {
-              console.log('Score submitted successfully:', result.data);
-            } else {
-              console.log('Failed to submit score:', result.error);
-            }
-          }).catch(error => {
-            console.error('Error submitting score:', error);
-          });
         }
         
         setGameOverData({
@@ -612,8 +613,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         setGameOver(true);
         setShowRestartBtn(true);
         
-        // Submit score to leaderboard
-        const playerData = getPlayerData(context);
+        // Submit score to leaderboard (share URL logic remains unchanged)
         const shareParams = new URLSearchParams({
           score: gameOverData.score.toString(),
           time: gameOverData.time,

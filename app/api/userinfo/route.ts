@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { fid, name, username, pfpUrl, walletAddress } = body;
+    console.log(body);
 
     if (!fid) {
       return NextResponse.json({ success: false, error: 'Missing fid' }, { status: 400 });

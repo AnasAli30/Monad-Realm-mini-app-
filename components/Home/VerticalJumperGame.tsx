@@ -990,7 +990,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       platforms.create(lastX, lastY, 'platform'); // First platform is always normal
       for (let i = 1; i < 13; i++) {
         // More challenging: randomize X fully within bounds
-        const x = Phaser.Math.Between(60, 580);
+        const x = Phaser.Math.Between(80, 640 - 80);
         const y = lastY - Phaser.Math.Between(100, 150);
         
         // Randomly choose platform type
@@ -1143,7 +1143,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       platforms.children.iterate(function (platform: any) {
         if (platform.y > player.y && player.body.center.distance(platform.body.center) > 700) {
           // More challenging: randomize X fully within bounds
-          const x = Phaser.Math.Between(60, 580);
+          const x = Phaser.Math.Between(80, 640 - 80);
           const y = minY - Phaser.Math.Between(100, 150);
           
           platform.x = x;
@@ -1324,10 +1324,13 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       }
     }
 
+    // Set game width dynamically
+    const gameWidth = window.innerWidth;
+
     console.log('⚙️ [MONAD JUMP] Creating Phaser config...');
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 640,
+      width: gameWidth * 1.1,
       height: window.innerHeight,
       parent: gameRef.current!,
       backgroundColor: '#87CEEB', // Sky blue background - no more black screen!
@@ -1371,7 +1374,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
 
     // Responsive resize
     function handleResize() {
-      phaserGameRef.current?.scale.resize(640, window.innerHeight);
+      phaserGameRef.current?.scale.resize(window.innerWidth, window.innerHeight);
     }
     window.addEventListener('resize', handleResize);
 
