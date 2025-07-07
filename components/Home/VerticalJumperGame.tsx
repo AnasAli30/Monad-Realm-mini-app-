@@ -25,6 +25,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   const [gameOverData, setGameOverData] = useState({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Game over data
   const [animatedScore, setAnimatedScore] = useState(0);
   const tiltXRef = useRef(0);
+  const [controlMode, setControlMode] = useState<'tilt' | 'button' | null>(null);
+  const buttonDirectionRef = useRef<0 | -1 | 1>(0);
   
   console.log('🎮 [MONAD JUMP] Component state initialized, gameKey:', gameKey);
 
@@ -53,69 +55,10 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     }
   }, [gameOverData.score, gameOver]);
 
+  // Only start the Phaser game after controlMode is selected
   useEffect(() => {
-    // Device orientation event handler
-    function handleOrientation(event: DeviceOrientationEvent) {
-      tiltXRef.current = event.gamma ?? 0;
-    }
-    window.addEventListener('deviceorientation', handleOrientation, true);
-
-    // iOS permission check
-    if (
-      typeof window !== 'undefined' &&
-      typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
-    ) {
-      setShowPermissionBtn(true);
-    }
-
-    return () => {
-      window.removeEventListener('deviceorientation', handleOrientation);
-    };
-  }, []);
-
-  // iOS permission request
-  function requestOrientationPermission() {
-    if (
-      typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
-    ) {
-      (DeviceOrientationEvent as any).requestPermission().then((response: string) => {
-        if (response === 'granted') {
-          setShowPermissionBtn(false);
-        }
-      });
-    }
-  }
-
-  // Restart game handler (no reload)
-  const handleRestart = () => {
-    setShowRestartBtn(false);
-    setGameOver(false); // Reset game over state
-    setGameOverData({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 }); // Reset game over data
-    setAnimatedScore(0);
-    setGameLoading(true); // Show loading screen again
-    phaserGameRef.current?.destroy(true);
-    phaserGameRef.current = null;
-    setGameKey((k) => k + 1); // trigger remount
-  };
-
-  useEffect(() => {
-    console.log('🔄 [MONAD JUMP] useEffect triggered, gameKey:', gameKey);
-    console.log('🔄 [MONAD JUMP] gameRef.current:', !!gameRef.current);
-    console.log('🔄 [MONAD JUMP] phaserGameRef.current:', !!phaserGameRef.current);
+    if (controlMode === null) return;
     
-    if (!gameRef.current) {
-      console.log('❌ [MONAD JUMP] No gameRef, returning early');
-      return;
-    }
-    if (phaserGameRef.current) {
-      console.log('❌ [MONAD JUMP] Phaser game already exists, returning early');
-      return;
-    }
-    
-    console.log('✅ [MONAD JUMP] Starting Phaser game initialization...');
-
     let player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
     let platforms: Phaser.Physics.Arcade.StaticGroup;
     let enemies: Phaser.Physics.Arcade.Group;
@@ -547,6 +490,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         collider.refreshBody();
       });
       this.physics.add.collider(player, enemies, (_: any, enemy: any) => {
+        if (enemy.enemyType === 'enemy2') return; // Ignore collision with enemy2
         enemy.anims.stop();
         player.anims.play('playerIdle', true);
         // player.setTint('0xff0000')
@@ -868,20 +812,25 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       const playerDiff = getDifficulty(Math.max(0, score - scorePenalty));
       const speedMultiplier = getPlayerSpeedMultiplier(playerDiff);
       
-      if (Math.abs(tiltXRef.current) > 5) {
-        player.setVelocityX(tiltXRef.current * 15 * speedMultiplier);
-        if (tiltXRef.current < 0) {
-          player.anims.play('playerLeftJump', true);
-        } else {
-          player.anims.play('playerRight', true);
-        }
-      } else {
-        if (leftKey.isDown && !rightKey.isDown) {
+      if (controlMode === 'button') {
+        if (buttonDirectionRef.current === -1) {
           player.setVelocityX(-350 * speedMultiplier);
           player.anims.play('playerLeftJump', true);
-        } else if (rightKey.isDown && !leftKey.isDown) {
+        } else if (buttonDirectionRef.current === 1) {
           player.setVelocityX(350 * speedMultiplier);
           player.anims.play('playerRight', true);
+        } else {
+          player.setVelocityX(0);
+          player.anims.play('playerIdle', true);
+        }
+      } else if (controlMode === 'tilt') {
+        if (Math.abs(tiltXRef.current) > 5) {
+          player.setVelocityX(tiltXRef.current * 15 * speedMultiplier);
+          if (tiltXRef.current < 0) {
+            player.anims.play('playerLeftJump', true);
+          } else {
+            player.anims.play('playerRight', true);
+          }
         } else {
           player.setVelocityX(0);
           player.anims.play('playerIdle', true);
@@ -1330,7 +1279,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     console.log('⚙️ [MONAD JUMP] Creating Phaser config...');
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: gameWidth * 1.1,
+      width: gameWidth ,
       height: window.innerHeight,
       parent: gameRef.current!,
       backgroundColor: '#87CEEB', // Sky blue background - no more black screen!
@@ -1385,9 +1334,161 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       phaserGameRef.current = null;
       console.log('✅ [MONAD JUMP] Component cleanup completed');
     };
-  }, [gameKey]);
+  }, [gameKey, controlMode]);
+
+  // In useEffect for device orientation, only set tiltXRef if in tilt mode
+  useEffect(() => {
+    function handleOrientation(event: DeviceOrientationEvent) {
+      if (controlMode === 'tilt') {
+        tiltXRef.current = event.gamma ?? 0;
+      }
+    }
+    if (controlMode === 'tilt') {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+    };
+  }, [controlMode]);
+
+  // In update function (inside Phaser scene), set player velocity based on controlMode
+  // If controlMode === 'button', use buttonDirection to set velocity
+  // If controlMode === 'tilt', use tiltXRef.current as before
+
+  useEffect(() => {
+    if (controlMode !== 'button' || !gameRef.current) return;
+    // Try to get the Phaser canvas inside the container
+    const canvas = gameRef.current.querySelector('canvas');
+    const el = canvas || gameRef.current;
+
+    function handleTouchStart(e: TouchEvent) {
+      if (e.touches.length > 0) {
+        const x = e.touches[0].clientX;
+        console.log('touchstart', x, window.innerWidth);
+        if (x < window.innerWidth / 2) {
+          buttonDirectionRef.current = -1;
+        } else {
+          buttonDirectionRef.current = 1;
+        }
+      }
+    }
+    function handleTouchEnd() {
+      console.log('touchend');
+      buttonDirectionRef.current = 0;
+    }
+    function handleMouseDown(e: MouseEvent) {
+      const x = e.clientX;
+      console.log('mousedown', x, window.innerWidth);
+      if (x < window.innerWidth / 2) {
+        buttonDirectionRef.current = -1;
+      } else {
+        buttonDirectionRef.current = 1;
+      }
+    }
+    function handleMouseUp() {
+      console.log('mouseup');
+      buttonDirectionRef.current = 0;
+    }
+
+    el.addEventListener('touchstart', handleTouchStart as EventListener);
+    el.addEventListener('touchend', handleTouchEnd as EventListener);
+    el.addEventListener('mousedown', handleMouseDown as EventListener);
+    el.addEventListener('mouseup', handleMouseUp as EventListener);
+
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart as EventListener);
+      el.removeEventListener('touchend', handleTouchEnd as EventListener);
+      el.removeEventListener('mousedown', handleMouseDown as EventListener);
+      el.removeEventListener('mouseup', handleMouseUp as EventListener);
+    };
+  }, [controlMode, gameRef.current, gameKey]);
+
+  const handleRestart = () => {
+    setShowRestartBtn(false);
+    setGameOver(false);
+    setGameOverData({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0 });
+    setAnimatedScore(0);
+    setGameLoading(true);
+    phaserGameRef.current?.destroy(true);
+    phaserGameRef.current = null;
+    setGameKey((k) => k + 1);
+  };
+
+  const requestOrientationPermission = () => {
+    if (
+      typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
+    ) {
+      (DeviceOrientationEvent as any).requestPermission().then((response: string) => {
+        if (response === 'granted') {
+          setShowPermissionBtn(false);
+        }
+      });
+    }
+  };
 
   console.log('🎬 [MONAD JUMP] Component rendering JSX...');
+  
+  // Render pre-game mode selection if controlMode is null
+  if (controlMode === null) {
+    return (
+      <div style={{
+        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+        background: '#87CEEB', zIndex: 3000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px',paddingTop: '100px'
+      }}>
+        <h2 style={{ color: 'white', fontSize: 32, marginBottom: 24 }}>Control Mode</h2>
+        <button
+          style={{
+            fontSize: 17,
+            margin: 12,
+            padding: '10px', // extra left padding for icon
+            borderRadius: 8,
+            height: '200px',
+            width: '200px',
+            textAlign: 'center',
+            border: '1px solid #ffffff',
+            color: '#ffffff',
+            background: "#87CEEB url('/images/tilt.png') no-repeat  center / 200px 200px"
+          }}
+          onClick={() => setControlMode('tilt')}
+        >
+           Sensor
+        </button>
+        <button
+          style={{
+            fontSize: 17,
+            margin: 12,
+            padding: '10px', // extra left padding for icon
+            borderRadius: 8,
+            height: '200px',
+            width: '200px',
+            textAlign: 'center',
+            border: '1px solid #ffffff',
+            objectFit: 'none',
+            color: '#ffffff',
+            background: "#87CEEB url('/images/leftright.png') no-repeat  center / 200px 200px"
+          }}
+          onClick={() => setControlMode('button')}
+        >
+          Touch
+        </button>
+      </div>
+    );
+  }
+
+  // Render left/right buttons at the bottom if in button mode
+  {controlMode === 'button' && !gameOver && (
+    <div style={{ position: 'fixed', bottom: 24, left: 0, width: '100vw', display: 'flex', justifyContent: 'center', zIndex: 2000 }}>
+      <button style={{ fontSize: 36, margin: '0 32px', width: 80, height: 80, borderRadius: 40 }}
+        onTouchStart={() => buttonDirectionRef.current = -1} onTouchEnd={() => buttonDirectionRef.current = 0} onMouseDown={() => buttonDirectionRef.current = -1} onMouseUp={() => buttonDirectionRef.current = 0}>
+        ◀
+      </button>
+      <button style={{ fontSize: 36, margin: '0 32px', width: 80, height: 80, borderRadius: 40 }}
+        onTouchStart={() => buttonDirectionRef.current = 1} onTouchEnd={() => buttonDirectionRef.current = 0} onMouseDown={() => buttonDirectionRef.current = 1} onMouseUp={() => buttonDirectionRef.current = 0}>
+        ▶
+      </button>
+    </div>
+  )}
   
   return (
     <>
@@ -1401,53 +1502,30 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       )}
       
       {gameLoading && (
-        <div style={{ 
-          position: 'fixed', 
-          top: 0, 
-          left: 0, 
-          width: '100vw', 
-          height: '100vh', 
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
           background: '#46a6ce',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 2000
+          zIndex: 2000,
+          overflow: 'hidden'
         }}>
-          <div style={{ textAlign: 'center', color: '#374151' }}>
-           
-            
-            {/* Rotating Parsnip */}
-            <div style={{ 
-              width: '100px', 
-              height: '100px', 
-              margin: '0 auto 2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/images/jump/parsnip1.png" 
-                alt="Loading..." 
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  animation: 'spin 2s linear infinite'
-                }}
-              />
-            </div>
-            
-            
-          </div>
-          
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `
-          }} />
+          <img
+            src="/images/jump/playersnip.png"
+            alt="Player"
+            style={{
+              position: 'absolute',
+              left: 'calc(50% - 20px)', // center horizontally (image width is 120px)
+              // width: '120px',
+              // height: '120px',
+              animation: 'fall-spin 2.5s linear infinite'
+            }}
+          />
         </div>
       )}
       
@@ -1653,6 +1731,16 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       
       {/* Add CSS animations */}
       <style jsx>{`
+        @keyframes fall-spin {
+          0% {
+            top: -120px;
+            transform: rotate(0deg);
+          }
+          100% {
+            top: 100vh;
+            transform: rotate(360deg);
+          }
+        }
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }

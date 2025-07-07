@@ -1518,24 +1518,27 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       {/* Candy background during initialization */}
       {!gameInitialized && (
         <div style={{
-          position: 'absolute',
+          position: 'fixed',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          width: '100vw',
+          height: '100vh',
           background: 'radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000
+          zIndex: 2000,
+          overflow: 'hidden'
         }}>
           <img
             src="/candy/molandakita.png"
-            alt="Moland"
+            alt="Candy"
             style={{
-              width: '80px',
-              height: '80px',
-              animation: 'spin 2s linear infinite'
+              position: 'absolute',
+              left: 'calc(50% - 30px)', // center horizontally (image width is 120px)
+              width: '90px',
+              height: '90px',
+              animation: 'fall-spin 2.5s linear infinite'
             }}
           />
         </div>
@@ -1736,6 +1739,16 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       
       {/* Add CSS animations */}
       <style jsx>{`
+        @keyframes fall-spin {
+          0% {
+            top: -120px;
+            transform: rotate(0deg);
+          }
+          100% {
+            top: 100vh;
+            transform: rotate(360deg);
+          }
+        }
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }

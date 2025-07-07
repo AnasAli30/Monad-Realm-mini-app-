@@ -28,6 +28,50 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   const [animatedScore, setAnimatedScore] = useState(0);
   const [showPermissionBtn, setShowPermissionBtn] = useState(false);
   const tiltXRef = useRef(0);
+  const [controlMode, setControlMode] = useState<'tilt' | 'button' | null>(null);
+  const buttonDirectionRef = useRef<0 | -1 | 1>(0);
+
+  // --- Touch/Mouse controls for button mode ---
+  useEffect(() => {
+    if (controlMode !== 'button') return;
+    const el = gameRef.current;
+    if (!el) return;
+
+    function handleTouchStart(e: TouchEvent) {
+      if (e.touches.length > 0) {
+        const x = e.touches[0].clientX;
+        if (x < window.innerWidth / 2) {
+          buttonDirectionRef.current = -1;
+        } else {
+          buttonDirectionRef.current = 1;
+        }
+      }
+    }
+    function handleTouchEnd() {
+      buttonDirectionRef.current = 0;
+    }
+    function handleMouseDown(e: MouseEvent) {
+      const x = e.clientX;
+      if (x < window.innerWidth / 2) {
+        buttonDirectionRef.current = -1;
+      } else {
+        buttonDirectionRef.current = 1;
+      }
+    }
+    function handleMouseUp() {
+      buttonDirectionRef.current = 0;
+    }
+    el.addEventListener('touchstart', handleTouchStart as EventListener);
+    el.addEventListener('touchend', handleTouchEnd as EventListener);
+    el.addEventListener('mousedown', handleMouseDown as EventListener);
+    el.addEventListener('mouseup', handleMouseUp as EventListener);
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart as EventListener);
+      el.removeEventListener('touchend', handleTouchEnd as EventListener);
+      el.removeEventListener('mousedown', handleMouseDown as EventListener);
+      el.removeEventListener('mouseup', handleMouseUp as EventListener);
+    };
+  }, [controlMode]);
 
   // Score counting animation
   useEffect(() => {
@@ -928,37 +972,49 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       if (player && player.body && player.body.enable) {
         let isMoving = false;
         let movementDirection = 0;
-        
-        if (Math.abs(tiltXRef.current) > 3) {
-          // Use tilt controls when tilting phone - fixed at Med+ sensitivity
-          const tiltForce = Math.max(-1, Math.min(1, tiltXRef.current / 10)); // Fixed sensitivity (Med+)
-          player.body.setAccelerationX(tiltForce * 2000); // Much faster acceleration
+
+        if (controlMode === 'tilt' && Math.abs(tiltXRef.current) > 3) {
+          // Use tilt controls
+          const tiltForce = Math.max(-1, Math.min(1, tiltXRef.current / 10));
+          player.body.setAccelerationX(tiltForce * 2000);
           isMoving = Math.abs(tiltForce) > 0.1;
           movementDirection = tiltForce > 0 ? 1 : -1;
-          
-          // Change player texture based on tilt direction
           if (tiltForce < -0.1) {
-            player.setTexture('player-left'); // Moving left
+            player.setTexture('player-left');
           } else if (tiltForce > 0.1) {
-            player.setTexture('player'); // Moving right
+            player.setTexture('player');
           }
-        } else {
-          // Use keyboard input with smooth acceleration
-          const cursors = this.input.keyboard!.createCursorKeys();
-          if (cursors.left.isDown) {
-            player.body.setAccelerationX(-2000); // Much faster left acceleration
+        } else if (controlMode === 'button') {
+          if (buttonDirectionRef.current === -1) {
+            player.body.setAccelerationX(-2000);
             isMoving = true;
             movementDirection = -1;
-            player.setTexture('player-left'); // Moving left
-          } else if (cursors.right.isDown) {
-            player.body.setAccelerationX(2000); // Much faster right acceleration
+            player.setTexture('player-left');
+          } else if (buttonDirectionRef.current === 1) {
+            player.body.setAccelerationX(2000);
             isMoving = true;
             movementDirection = 1;
-            player.setTexture('player'); // Moving right
+            player.setTexture('player');
           } else {
-            player.body.setAccelerationX(0); // No input, let drag slow down
+            player.body.setAccelerationX(0);
             isMoving = false;
-            // Keep current texture when not moving
+          }
+        } else {
+          // Use keyboard input as fallback
+          const cursors = this.input.keyboard!.createCursorKeys();
+          if (cursors.left.isDown) {
+            player.body.setAccelerationX(-2000);
+            isMoving = true;
+            movementDirection = -1;
+            player.setTexture('player-left');
+          } else if (cursors.right.isDown) {
+            player.body.setAccelerationX(2000);
+            isMoving = true;
+            movementDirection = 1;
+            player.setTexture('player');
+          } else {
+            player.body.setAccelerationX(0);
+            isMoving = false;
           }
         }
         
@@ -1218,7 +1274,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       phaserGameRef.current?.destroy(true);
       phaserGameRef.current = null;
     };
-  }, [gameKey]);
+  }, [gameKey, controlMode]);
 
   // Memoized star and shooting star data for stable animation
   const starData = useMemo(() =>
@@ -1248,6 +1304,62 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
     []
   );
 
+  if (controlMode === null) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'linear-gradient(180deg, #001122 0%, #f9f7f4 100%)',
+        zIndex: 3000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        gap: '20px',
+        paddingTop: '100px',
+      }}>
+        <h2 style={{ color: 'white', fontSize: 32, marginBottom: 24 }}>Control Mode</h2>
+        <button
+          style={{
+            fontSize: 17,
+            margin: 12,
+            padding: '10px',
+            borderRadius: 8,
+            height: '200px',
+            width: '200px',
+            textAlign: 'center',
+            border: '1px solid #ffffff',
+            color: '#ffffff',
+            background: " url('/images/tilt.png') no-repeat  center / 200px 200px"
+          }}
+          onClick={() => setControlMode('tilt')}
+        >
+          Sensor
+        </button>
+        <button
+          style={{
+            fontSize: 17,
+            margin: 12,
+            padding: '10px',
+            borderRadius: 8,
+            height: '200px',
+            width: '200px',
+            textAlign: 'center',
+            border: '1px solid #ffffff',
+            color: '#ffffff',
+            background: " url('/images/leftright.png') no-repeat  center / 200px 200px"
+          }}
+          onClick={() => setControlMode('button')}
+        >
+          Touch
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       {showPermissionBtn && (
@@ -1270,15 +1382,18 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 2000
+          zIndex: 2000,
+          overflow: 'hidden'
         }}>
           <img
             src="/shoot/player-left.png"
             alt="Player"
             style={{
-              width: '120px',
-              height: '120px',
-              animation: 'spin 2s linear infinite'
+              position: 'absolute',
+              left: 'calc(50% - 60px)', // center horizontally (image width is 120px)
+              // width: '120px',
+              // height: '120px',
+              animation: 'fall-spin 2.5s linear infinite'
             }}
           />
         </div>
@@ -1537,6 +1652,16 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       </div>
 
       <style jsx>{`
+        @keyframes fall-spin {
+          0% {
+            top: -120px;
+            transform: rotate(0deg);
+          }
+          100% {
+            top: 100vh;
+            transform: rotate(360deg);
+          }
+        }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
