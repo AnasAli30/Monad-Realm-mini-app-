@@ -11,9 +11,18 @@ let db: Db;
 
 async function connectToDatabase() {
   if (!client) {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(dbName);
+    try {
+      client = new MongoClient(uri);
+      await client.connect();
+      db = client.db(dbName);
+    } catch (err) {
+      console.error('Failed to connect to MongoDB:', err);
+      throw new Error('Database connection failed');
+    }
+  }
+  if (!db) {
+    console.error('Database is undefined after connection attempt');
+    throw new Error('Database is undefined after connection attempt');
   }
   return db;
 }

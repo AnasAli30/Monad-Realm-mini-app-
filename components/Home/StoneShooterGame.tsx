@@ -642,20 +642,21 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           console.error('Error submitting score:', error);
         });
 
-        if (score > maxScore) {
-          localStorage.setItem('stoneShooterMaxScore', score.toString());
-        }
-        
         setGameOverData({
           score,
           time: formattedTime,
           bestScore: Math.max(score, maxScore),
-          previousBestScore: maxScore, // Keep track of previous best for percentage calculation
+          previousBestScore: maxScore, // Use the value before updating localStorage
           stonesDestroyed,
           playerHits
         });
         setGameOver(true);
         setShowRestartBtn(true);
+
+        // Now update localStorage if needed
+        if (score > maxScore) {
+          localStorage.setItem('stoneShooterMaxScore', score.toString());
+        }
         
         // Submit score to leaderboard (share URL logic remains unchanged)
         const shareParams = new URLSearchParams({
