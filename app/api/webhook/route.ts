@@ -59,9 +59,10 @@ export async function POST(request: Request) {
   const requestJson = await request.json();
 
   const { header: encodedHeader, payload: encodedPayload } = requestJson;
-
+  console.log("encodedPayload", encodedPayload);
   const headerData = decode(encodedHeader);
   const event = decode(encodedPayload);
+  console.log("event", event);
 
   const { fid, key } = headerData;
 
