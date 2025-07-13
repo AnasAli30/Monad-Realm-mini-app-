@@ -71,7 +71,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       el.removeEventListener('mousedown', handleMouseDown as EventListener);
       el.removeEventListener('mouseup', handleMouseUp as EventListener);
     };
-  }, [controlMode]);
+  }, [controlMode, gameKey]);
 
   // Score counting animation
   useEffect(() => {
