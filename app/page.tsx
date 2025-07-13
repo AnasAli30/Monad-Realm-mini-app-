@@ -76,7 +76,7 @@ export async function generateMetadata({ searchParams }: { searchParams?: Record
         name: 'Monad Realm',
         url: APP_URL,
         splashImageUrl: `${APP_URL}/images/splash.png`,
-        splashBackgroundColor: 'linear-gradient(135deg, #23272f 0%, #181a20 100%)',
+        splashBackgroundColor: '#000000',
       },
     },
   }

@@ -1832,6 +1832,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
             const playerData = getPlayerData(context); // <-- Add this line
             console.log(gameOverData);
             const improvementText = gameOverData.score > gameOverData.previousBestScore && gameOverData.previousBestScore > 0 ? `+${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% from best` : '';
+
+            
             const shareParams = new URLSearchParams({
                   score: gameOverData.score.toString(),
                   time: gameOverData.time,
