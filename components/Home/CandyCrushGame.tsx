@@ -1549,7 +1549,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       <div
         key={gameKey}
         ref={gameRef}
-        style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000, filter: gameOverState ? 'blur(2px)' : 'none', transition: 'filter 0.5s ease', background: 'linear-gradient(180deg, #f9f7f4 0%, #001122 100%)' }}
+        style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000, filter: gameOverState ? 'blur(2px)' : 'none', transition: 'filter 0.5s ease'}}
       />
       
 
