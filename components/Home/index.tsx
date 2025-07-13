@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGamepad as faGamepadSolid, faCoins, faUsers, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import { useAccount, useSwitchChain } from 'wagmi';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
+import { monadTestnet } from 'wagmi/chains';
 
 // Dynamic Loading Component
 const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
@@ -331,6 +332,7 @@ export function Demo() {
 
   // Store user info to backend when game opens (once per session)
   useEffect(() => {
+    switchChain({ chainId: monadTestnet.id })
     if (!context || !context.user || !address) return;
     if (typeof window === 'undefined') return;
     if (sessionStorage.getItem('user-info-sent') === 'true') return;

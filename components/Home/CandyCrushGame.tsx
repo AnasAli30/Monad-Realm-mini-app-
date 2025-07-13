@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import Phaser from 'phaser';
 import { APP_URL } from '@/lib/constants';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
-import { submitScore, getPlayerData } from '@/lib/leaderboard';
+import { submitScore, getPlayerData, fetchWithVerification } from '@/lib/leaderboard';
+import GiftRewardModal from '../GiftRewardModal';
+import { getRandomValue, getTokenAddress, getTokenDecimals, getTokenImage, rewardTypes, RewardToken } from '@/lib/rewards';
+import { useContractWrite, useAccount, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
+import { parseUnits } from 'viem';
+import { monadTestnet } from 'wagmi/chains';
+import ConfirmEndGameModal from '../ConfirmEndGameModal';
 
 interface CandyCrushGameProps {
   onBack?: () => void;
@@ -22,13 +28,19 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
   const [level, setLevel] = useState(1);
   const [moves, setMoves] = useState(10);
   const [animatedScore, setAnimatedScore] = useState(0);
-  const [previousBestScore, setPreviousBestScore] = useState(0);
+  const [previousBestScore, setPreviousBestScore] = useState(() => parseInt(localStorage.getItem('candyCrushMaxScore') || '0'));
   const [gameKey, setGameKey] = useState<number>(0);
   
   // Challenge system state
   const [challengeCandyType, setChallengeCandyType] = useState('1');
   const [challengeTarget, setChallengeTarget] = useState(10);
   const [challengeProgress, setChallengeProgress] = useState(0);
+
+  const [showConfirmEnd, setShowConfirmEnd] = useState(false);
+
+  // Add reshuffles state
+  const [reshuffles, setReshuffles] = useState(1);
+  const reshuffleGridRef = useRef<null | (() => void)>(null);
 
   // Score counting animation
   useEffect(() => {
@@ -256,7 +268,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       const centerX = screenWidth / 2;
       const progressBarWidth = Math.min(screenWidth - 40, 300); // Responsive progress bar width
       
-      scoreText = this.add.text(20, 10, 'Score: 0', { fontSize: '20px', color: 'black', fontStyle: 'bold' });
+      scoreText = this.add.text(centerX -60, 10, 'Score:0', { fontSize: '20px', color: 'black', fontStyle: 'bold' });
       movesText = this.add.text(screenWidth - 20, 10, 'Moves:10', { fontSize: '20px', color: 'black', fontStyle: 'bold' }).setOrigin(1, 0);
       
       // Level text above progress bar
@@ -283,6 +295,11 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       
       // Initialize UI
       updateUI();
+
+      // In initGame, after defining scene, add:
+      scene.events.on('levelup', () => {
+        setReshuffles(r => r + 1);
+      });
     }
 
     // Function to update both React state and Phaser UI
@@ -294,7 +311,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       setChallengeProgress(gameChallengeProgress);
       
       // Update Phaser text objects
-      if (scoreText) scoreText.setText(`Score: ${gameScore}`);
+      if (scoreText) scoreText.setText(`${gameScore}`);
       if (levelText) levelText.setText(`Level: ${gameLevel}`);
       if (movesText) movesText.setText(`Moves: ${gameMoves}`);
       // Update challenge display
@@ -376,22 +393,18 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       // Check for challenge completion - auto advance to next level
       if (gameChallengeProgress >= gameChallengeTarget) {
         console.log('🎉 Challenge completed! Auto advancing to next level...');
-        
         // Increment level and generate new challenge
         gameLevel++;
-        
+        scene.events.emit('levelup'); // <-- emit event for reshuffle
         // Calculate new challenge parameters
         const newChallengeTarget = 10 + (gameLevel - 1) * 5; // Start with 10, add 5 per level
         const newChallengeCandy = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
-        
         // Add moves equal to the new challenge target
         gameMoves += newChallengeTarget;
-        
         // Apply new challenge
         gameChallengeCandy = newChallengeCandy;
         gameChallengeTarget = newChallengeTarget;
         gameChallengeProgress = 0;
-        
         console.log(`🎯 New Level ${gameLevel} Challenge: Match ${gameChallengeTarget} candies of type ${gameChallengeCandy}`);
         console.log(`💪 Bonus moves added: +${newChallengeTarget} (Total moves: ${gameMoves})`);
       }
@@ -1263,6 +1276,80 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
     };
 
     new Phaser.Game(config);
+
+    // Add reshuffleGrid function in Phaser logic and expose to React
+    function reshuffleGrid() {
+      // Animate all candies falling down and fading out
+      let total = 0, done = 0;
+      // Vibrate for reshuffle start
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      }
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const candy = grid[row][col];
+          if (candy) {
+            total++;
+            scene.tweens.add({
+              targets: candy,
+              y: candy.y + 300,
+              alpha: 0,
+              duration: 350,
+              ease: 'Cubic.easeIn',
+              onComplete: () => {
+                candy.destroy();
+                done++;
+                if (done === total) {
+                  // After all candies are gone, refill grid with new candies from above
+                  refillGridWithAnimation();
+                }
+              }
+            });
+          }
+          grid[row][col] = null;
+        }
+      }
+      // If grid was empty (shouldn't happen), just refill
+      if (total === 0) refillGridWithAnimation();
+    }
+
+    function refillGridWithAnimation() {
+      let total = GRID_ROWS * GRID_COLS;
+      let landed = 0;
+      for (let row = 0; row < GRID_ROWS; row++) {
+        for (let col = 0; col < GRID_COLS; col++) {
+          const newType = CANDY_TYPES[Math.floor(Math.random() * CANDY_TYPES.length)];
+          const x = GRID_X + col * CANDY_SPACING + CANDY_SPACING / 2;
+          const yStart = -100;
+          const yEnd = GRID_Y + row * CANDY_SPACING + CANDY_SPACING / 2;
+          const candy = new Candy(scene, x, yStart, col, row, newType);
+          candy.alpha = 0;
+          grid[row][col] = candy;
+          scene.tweens.add({
+            targets: candy,
+            y: yEnd,
+            alpha: 1,
+            duration: 400,
+            delay: 60 * row + 20 * col,
+            ease: 'Bounce.easeOut',
+            onComplete: () => {
+              landed++;
+              // Vibrate for each candy landing (short pulse)
+              if ('vibrate' in navigator) {
+                navigator.vibrate(10);
+              }
+              // When the last candy animates in, update UI and check for matches
+              if (landed === total) {
+                updateUI();
+                checkForMatches();
+              }
+            }
+          });
+        }
+      }
+    }
+    // Expose to React
+    reshuffleGridRef.current = reshuffleGrid;
   };
 
   // Memoized background animation data for stable animation
@@ -1355,6 +1442,115 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
     }),
     []
   );
+
+  const { address } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [claimedReward, setClaimedReward] = useState<{ type: RewardToken, amount: number } | null>(null);
+  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('candyCrushMaxScore') || '0'));
+  const { writeContract, data: claimData, isSuccess: claimSuccess, isError: claimError, error: claimErrorObj, reset: resetClaim } = useContractWrite();
+  const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimData });
+
+  // On game over, check for new high score and open modal
+  useEffect(() => {
+    if (gameOver) {
+      const prevBest = parseInt(localStorage.getItem('candyCrushMaxScore') || '0');
+      if (score > prevBest) {
+        setPreviousBestScore(prevBest); // Save previous best before updating
+        const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
+        const amount = getRandomValue(rewardType);
+        setClaimedReward({ type: rewardType, amount });
+        setShowGiftModal(true);
+        localStorage.setItem('candyCrushMaxScore', score.toString());
+        setBestScore(score);
+      } else {
+        setShowGiftModal(false);
+      }
+    }
+  }, [gameOver]);
+
+  // Claim handler
+  const handleClaimReward = async () => {
+    try {
+      const rewardType = claimedReward?.type as RewardToken;
+      const amount = claimedReward?.amount;
+      if (!rewardType || amount == null) throw new Error('No reward selected');
+      const decimals = getTokenDecimals(rewardType);
+      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      const playerData = getPlayerData(context);
+      const userAddress = address || '';
+      const res = await fetchWithVerification('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAddress,
+          tokenAddress: getTokenAddress(rewardType),
+          amount: amountInt,
+          tokenName: rewardType,
+          name: playerData.username,
+          pfpUrl: playerData.pfpUrl,
+          score,
+          fid: playerData.fid,
+          game: 'Candy Crush'
+        })
+      });
+      if (res.status === 403) {
+        setShowGiftModal(false);
+        // alert('Score verification failed. Please refresh and try again.');
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to get signature');
+      const { signature } = await res.json();
+      switchChain({ chainId: monadTestnet.id });
+      writeContract({
+        abi: [
+          {
+            name: 'claimTokenReward',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'token', type: 'address' },
+              { name: 'amount', type: 'uint256' },
+              { name: 'signature', type: 'bytes' }
+            ],
+            outputs: []
+          }
+        ],
+        address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
+        functionName: 'claimTokenReward',
+        args: [
+          getTokenAddress(rewardType) as `0x${string}`,
+          BigInt(amountInt),
+          signature as `0x${string}`
+        ]
+      });
+    } catch (err: any) {
+      // error handled by wagmi
+    }
+  };
+
+  // Add this useRef to prevent duplicate submissions:
+  const hasSubmittedScore = useRef(false);
+
+  // Add this useEffect:
+  useEffect(() => {
+    if (gameOver && !hasSubmittedScore.current) {
+      hasSubmittedScore.current = true;
+      const playerData = getPlayerData(context);
+      submitScore(playerData.fid, playerData.username, playerData.pfpUrl, score, 'Candy Crush', { level }).then(result => {
+        if (result.success) {
+          console.log('Score submitted successfully:', result.data);
+        } else {
+          console.log('Failed to submit score:', result.error);
+        }
+      }).catch(error => {
+        console.error('Error submitting score:', error);
+      });
+    }
+    if (!gameOver) {
+      hasSubmittedScore.current = false;
+    }
+  }, [gameOver, score, level, context]);
 
   return (
     <div style={{ 
@@ -1549,7 +1745,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       <div
         key={gameKey}
         ref={gameRef}
-        style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000, filter: gameOverState ? 'blur(2px)' : 'none', transition: 'filter 0.5s ease'}}
+        style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000, filter: gameOverState ? 'blur(5px)' : 'none', transition: 'filter 0.5s ease'}}
       />
       
 
@@ -1560,7 +1756,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
           <button
             style={{
               position: 'fixed',
-              top: '30px',
+              top: '10px',
               left: '0px',
               zIndex: 2100,
               padding: '8px 16px',
@@ -1843,6 +2039,104 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
           animation-play-state: paused !important;
         }
       `}</style>
+      <GiftRewardModal
+        open={showGiftModal}
+        onClose={() => { setShowGiftModal(false); resetClaim(); }}
+        rewardType={claimedReward?.type as RewardToken || "MON"}
+        amount={claimedReward?.amount || 0}
+        tokenIcon={<span style={{fontSize: 32}}>🪙</span>}
+        tokenImg={getTokenImage((claimedReward?.type as RewardToken) || "MON")}
+        onClaim={handleClaimReward}
+        claimSuccess={claimSuccess}
+        claimError={
+          claimError
+            ? (claimErrorObj?.message?.toLowerCase().includes('user rejected')
+                ? 'You rejected the transaction. Please confirm the transaction in your wallet to claim your reward.'
+                : claimErrorObj?.message || "Transaction failed")
+            : null
+        }
+        onShare={async () => {
+          if (!actions || !actions.composeCast) return;
+          const rewardType = claimedReward?.type as RewardToken || "MON";
+          const amount = claimedReward?.amount || 0;
+          const playerData = getPlayerData(context);
+          const improvementText = score > previousBestScore && previousBestScore > 0
+            ? `+${Math.round(((score - previousBestScore) / previousBestScore) * 100)}% from best`
+            : '';
+          const shareParams = new URLSearchParams({
+            score: score.toString(),
+            gameType: 'candy-crush',
+            ...(playerData.username && { username: playerData.username }),
+            ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+          });
+          const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+          const shareText = `🎁 I just claimed a reward: ${amount} ${rewardType} and scored ${score} in level ${level} in Mona Crush! \n🚀${improvementText}\n\nCan you beat my score?\nPlay and win your own rewards`;
+          await actions.composeCast({
+            text: shareText,
+            embeds: [shareUrl],
+          });
+        }}
+      />
+      { gameInitialized && !gameOver && (
+        <div style={{ position: 'absolute', top: 0, left: 0, zIndex: 2001 }}>
+          <button
+            style={{
+              // background: 'rgba(255,255,255,0.9)',
+              color: '#e11d48',
+              fontWeight: 700,
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 18px',
+              fontSize: 18,
+              cursor: 'pointer',
+              // boxShadow: '0 2px 8px #e11d4822',
+            }}
+            onClick={() => setShowConfirmEnd(true)}
+          >
+            ◀ HOME
+          </button>
+        </div>
+      )}
+      <ConfirmEndGameModal
+        open={showConfirmEnd}
+        onClose={() => setShowConfirmEnd(false)}
+        onConfirm={() => {
+          setShowConfirmEnd(false);
+          setGameOver(true);
+          setGameOverState(true); // show stats overlay if needed
+        }}
+        message="Are you sure you want to end this game? Your progress will be lost."
+      />
+      {/* Only show reshuffle button when game is initialized and not over */}
+      {gameInitialized && !gameOver && (
+        <div style={{ position: 'fixed', bottom: 60, left: 0, width: '100vw', display: 'flex', justifyContent: 'center', zIndex: 2002 }}>
+          <button
+            onClick={() => {
+              if (reshuffles > 0 && reshuffleGridRef.current) {
+                reshuffleGridRef.current();
+                setReshuffles(r => r - 1);
+              }
+            }}
+            disabled={reshuffles === 0}
+            style={{
+              background: reshuffles === 0 ? '#ccc' : 'radial-gradient(circle at center, #ff69b4 0%, #ffffff 100%)',
+              color: '#fff',
+              fontWeight: 'bold',
+              fontSize: 16,
+              border: 'none',
+              borderRadius: 10,
+              padding: '12px 36px',
+              margin: '0 auto',
+              boxShadow: '0 2px 8px #ff69b422',
+              cursor: reshuffles === 0 ? 'not-allowed' : 'pointer',
+              opacity: reshuffles === 0 ? 0.6 : 1,
+              transition: 'all 0.2s',
+            }}
+          >
+             🫨Re-shuffle ({reshuffles})
+          </button>
+        </div>
+      )}
     </div>
   );
 } 

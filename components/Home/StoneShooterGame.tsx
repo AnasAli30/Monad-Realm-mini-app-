@@ -3,7 +3,13 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import Phaser from 'phaser';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
-import { submitScore, getPlayerData } from '@/lib/leaderboard';
+import { submitScore, getPlayerData, fetchWithVerification } from '@/lib/leaderboard';
+import GiftRewardModal from '../GiftRewardModal';
+import ConfirmEndGameModal from '../ConfirmEndGameModal';
+import { getRandomValue, getTokenAddress, getTokenDecimals, getTokenImage, rewardTypes, RewardToken } from '@/lib/rewards';
+import { useContractWrite, useAccount, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
+import { parseUnits } from 'viem';
+import { monadTestnet } from 'wagmi/chains';
 
 interface StoneShooterGameProps {
   onBack?: () => void;
@@ -30,6 +36,15 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   const tiltXRef = useRef(0);
   const [controlMode, setControlMode] = useState<'tilt' | 'button' | null>(null);
   const buttonDirectionRef = useRef<0 | -1 | 1>(0);
+  const { address } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [claimedReward, setClaimedReward] = useState<{ type: RewardToken, amount: number } | null>(null);
+  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('stoneShooterMaxScore') || '0'));
+  const [previousBestScore, setPreviousBestScore] = useState(() => parseInt(localStorage.getItem('stoneShooterMaxScore') || '0'));
+  const [showConfirmEnd, setShowConfirmEnd] = useState(false);
+  const { writeContract, data: claimData, isSuccess: claimSuccess, isError: claimError, error: claimErrorObj, reset: resetClaim } = useContractWrite();
+  const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimData });
 
   // --- Touch/Mouse controls for button mode ---
   useEffect(() => {
@@ -1277,6 +1292,86 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
     };
   }, [gameKey, controlMode]);
 
+  // On game over, check for new high score and open modal
+  useEffect(() => {
+    if (
+      gameOver &&
+      gameOverData.score > 0 &&
+      gameOverData.bestScore > gameOverData.previousBestScore
+    ) {
+      const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
+      const amount = getRandomValue(rewardType);
+      setClaimedReward({ type: rewardType, amount });
+      setShowGiftModal(true);
+      localStorage.setItem('stoneShooterMaxScore', gameOverData.bestScore.toString());
+      setBestScore(gameOverData.bestScore);
+      setPreviousBestScore(gameOverData.previousBestScore);
+    } else {
+      setShowGiftModal(false);
+    }
+  }, [gameOver, gameOverData]);
+
+  // Claim handler
+  const handleClaimReward = async () => {
+    try {
+      const rewardType = claimedReward?.type as RewardToken;
+      const amount = claimedReward?.amount;
+      if (!rewardType || amount == null) throw new Error('No reward selected');
+      const decimals = getTokenDecimals(rewardType);
+      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      const playerData = getPlayerData(context);
+      const userAddress = address || '';
+      const res = await   fetchWithVerification('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAddress,
+          tokenAddress: getTokenAddress(rewardType),
+          amount: amountInt,
+          tokenName: rewardType,
+          name: playerData.username,
+          pfpUrl: playerData.pfpUrl,
+          score: gameOverData.score,
+          fid: playerData.fid,
+          game: 'Bounce Blaster'
+        })
+      });
+      if (res.status === 403) {
+        setShowGiftModal(false);
+        // alert('Score verification failed. Please refresh and try again.');
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to get signature');
+      const { signature } = await res.json();
+      switchChain({ chainId: monadTestnet.id });
+      writeContract({
+        abi: [
+          {
+            name: 'claimTokenReward',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'token', type: 'address' },
+              { name: 'amount', type: 'uint256' },
+              { name: 'signature', type: 'bytes' }
+            ],
+            outputs: []
+          }
+        ],
+        address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
+        functionName: 'claimTokenReward',
+        args: [
+          getTokenAddress(rewardType) as `0x${string}`,
+          BigInt(amountInt),
+          signature as `0x${string}`
+        ]
+      });
+    } catch (err: any) {
+      console.log(err);
+      // error handled by wagmi
+    }
+  };
+
   // Memoized star and shooting star data for stable animation
   const starData = useMemo(() =>
     Array.from({ length: 50 }, (_, i) => {
@@ -1463,7 +1558,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
             }} onClick={async () => {
               try {
                 const improvementText = gameOverData.score > gameOverData.previousBestScore && gameOverData.previousBestScore > 0 
-                  ? `\n\n🔥 That's +${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% improvement from my Highest Score!`
+                  ? `\n\🔥 That's +${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% improvement from my Highest Score!`
                   : '';
                 
                 const shareText = `🎯 Just scored ${gameOverData.score} points in Bounce Blaster! 💥\n\ ${gameOverData.stonesDestroyed} kills and survived ${gameOverData.playerHits} hits!${improvementText}\n\nCan you beat my score?`;
@@ -1698,6 +1793,49 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           animation-play-state: paused !important;
         }
       `}</style>
+
+      {/* Home button, ConfirmEndGameModal, and GiftRewardModal */}
+      
+     
+      <GiftRewardModal
+        open={showGiftModal}
+        onClose={() => { setShowGiftModal(false); resetClaim(); }}
+        rewardType={claimedReward?.type as RewardToken || "MON"}
+        amount={claimedReward?.amount || 0}
+        tokenIcon={<span style={{fontSize: 32}}>🪙</span>}
+        tokenImg={getTokenImage((claimedReward?.type as RewardToken) || "MON")}
+        onClaim={handleClaimReward}
+        claimSuccess={claimSuccess}
+        claimError={
+          claimError
+            ? (claimErrorObj?.message?.toLowerCase().includes('user rejected')
+                ? 'You rejected the transaction. Please confirm the transaction in your wallet to claim your reward.'
+                : claimErrorObj?.message || "Transaction failed")
+            : null
+        }
+        onShare={async () => {
+          if (!actions || !actions.composeCast) return;
+          const rewardType = claimedReward?.type as RewardToken || "MON";
+          const amount = claimedReward?.amount || 0;
+          const playerData = getPlayerData(context);
+          const improvementText = gameOverData.score > previousBestScore && previousBestScore > 0
+            ? `+${Math.round(((gameOverData.score - previousBestScore) / previousBestScore) * 100)}% improvement from my Highest Score!`
+            : '';
+          const shareParams = new URLSearchParams({
+            score: gameOverData.score.toString(),
+            time: gameOverData.time,
+            gameType: 'stone-shooter',
+            ...(playerData.username && { username: playerData.username }),
+            ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+          });
+          const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+          const shareText = `🎮 Just claimed a reward: ${amount} ${rewardType} and Scored ${gameOverData.score} points in Bounce Blaster! 💥\n\ ${gameOverData.stonesDestroyed} kills and survived ${gameOverData.playerHits} hits!\n🚀${improvementText}\n\nCan you beat my score?`;
+          await actions.composeCast({
+            text: shareText,
+            embeds: [shareUrl],
+          });
+        }}
+      />
     </>
   );
 } 

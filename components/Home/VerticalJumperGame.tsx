@@ -3,7 +3,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { APP_URL } from '@/lib/constants';
-import { submitScore, getPlayerData } from '@/lib/leaderboard';
+import { submitScore, getPlayerData, generateRandomKey, generateFusedKey, fetchWithVerification } from '@/lib/leaderboard';
+import GiftRewardModal from '../GiftRewardModal';
+import { useContractWrite,useAccount, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
+import { parseUnits } from 'viem';
+import { monadTestnet } from 'wagmi/chains';
+import { getRandomValue, getTokenAddress, getTokenDecimals, getTokenImage, rewardTypes, RewardToken } from '@/lib/rewards';
 
 interface VerticalJumperGameProps {
   onBack?: () => void;
@@ -12,9 +17,11 @@ interface VerticalJumperGameProps {
 export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) {
   const componentStartTime = performance.now();
   console.log('🎮 [MONAD JUMP] Component initializing at:', componentStartTime);
-  
+  const { address } = useAccount();
   const { context, actions } = useMiniAppContext();
   const gameRef = useRef<HTMLDivElement>(null);
+  const { switchChain } = useSwitchChain();
+
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [showPermissionBtn, setShowPermissionBtn] = useState(false);
   const [showRestartBtn, setShowRestartBtn] = useState(false);
@@ -27,6 +34,15 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   const tiltXRef = useRef(0);
   const [controlMode, setControlMode] = useState<'tilt' | 'button' | null>(null);
   const buttonDirectionRef = useRef<0 | -1 | 1>(0);
+  const [showGiftModal, setShowGiftModal] = useState(false);
+  const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('maxScore') || '0'));
+  const [claiming, setClaiming] = useState(false);
+  const { writeContract, data: claimData, isSuccess: claimSuccess, isError: claimError, error: claimErrorObj, reset: resetClaim } = useContractWrite();
+  
+  const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({
+    hash: claimData,
+  });
+  const [claimedReward, setClaimedReward] = useState<{ type: string, amount: number } | null>(null);
   
   console.log('🎮 [MONAD JUMP] Component state initialized, gameKey:', gameKey);
 
@@ -500,30 +516,26 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         this.gameOverSound.play();
         gameOver = true;
         gameOverOverlay.visible = true; // Show blur overlay
-        
         // Hide Phaser text elements (we'll show them in React)
         gameOverText.visible = false;
         timerText.visible = false;
         finalScoreText.visible = false;
         maxScoreText.visible = false;
-        
         // Calculate game over data
         const displayScore = Math.max(0, score - scorePenalty);
         const minutes = Math.floor(gameTimer / 60);
         const seconds = gameTimer % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        const maxScore = parseInt(localStorage.getItem('maxScore') || '0');
-        
+        const prevMaxScore = parseInt(localStorage.getItem('maxScore') || '0'); // Capture BEFORE updating
         // Pass data to React state
         setGameOverData({
           score: displayScore,
           time: formattedTime,
-          bestScore: Math.max(displayScore, maxScore),
-          previousBestScore: maxScore
+          bestScore: Math.max(displayScore, prevMaxScore),
+          previousBestScore: prevMaxScore
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
-        
         // Submit score to leaderboard
         const playerData = getPlayerData(context);
         submitScore(playerData.fid, playerData.username, playerData.pfpUrl, displayScore, 'Monad Jump', {
@@ -537,7 +549,11 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         }).catch(error => {
           console.error('Error submitting score:', error);
         });
-        
+        // Now update localStorage if needed
+        if (displayScore > prevMaxScore) {
+          localStorage.setItem('maxScore', displayScore.toString());
+          setBestScore(displayScore);
+        }
         player.body.allowGravity = true;
         player.setVelocityY(600);
         player.body.checkCollision.none = true;
@@ -1212,14 +1228,13 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         const minutes = Math.floor(gameTimer / 60);
         const seconds = gameTimer % 60;
         const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        const maxScore = parseInt(localStorage.getItem('maxScore') || '0');
-        
+        const prevMaxScore = parseInt(localStorage.getItem('maxScore') || '0'); // Capture BEFORE updating
         // Pass data to React state
         setGameOverData({
           score: displayScore,
           time: formattedTime,
-          bestScore: Math.max(displayScore, maxScore),
-          previousBestScore: maxScore
+          bestScore: Math.max(displayScore, prevMaxScore),
+          previousBestScore: prevMaxScore
         });
         setGameOver(true); // Set React state for blur effect
         setShowRestartBtn(true);
@@ -1237,7 +1252,11 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         }).catch(error => {
           console.error('Error submitting score:', error);
         });
-        
+        // Now update localStorage if needed
+        if (displayScore > prevMaxScore) {
+          localStorage.setItem('maxScore', displayScore.toString());
+          setBestScore(displayScore);
+        }
         player.anims.play('playerIdle', true);
         player.body.allowGravity = true;
         player.setVelocityY(600);
@@ -1261,15 +1280,6 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         // Display score minus penalties
         const displayScore = Math.max(0, score - scorePenalty);
         scoreText.setText(displayScore.toString());
-      }
-      storeMaxScore();
-    }
-
-    function storeMaxScore() {
-      const displayScore = Math.max(0, score - scorePenalty);
-      if (parseInt(localStorage.getItem('maxScore') || '0') < displayScore) {
-        localStorage.setItem('maxScore', displayScore.toString());
-        // scoreMax.setText(`Max Score: ${localStorage.getItem('maxScore')}`);
       }
     }
 
@@ -1402,6 +1412,88 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       el.removeEventListener('mouseup', handleMouseUp as EventListener);
     };
   }, [controlMode, gameRef.current, gameKey]);
+
+  
+  // Inside the component, add the reward claim logic:
+  const handleClaimReward = async () => {
+    try {
+      const rewardType = claimedReward?.type as RewardToken;
+      const amount = claimedReward?.amount;
+      if (!rewardType || amount == null) throw new Error('No reward selected');
+      const decimals = getTokenDecimals(rewardType);
+      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      const playerData = getPlayerData(context);
+      const userAddress = address || '';
+      const res = await fetchWithVerification('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userAddress,
+          tokenAddress: getTokenAddress(rewardType),
+          amount: amountInt,
+          tokenName: rewardType,
+          name: playerData.username,
+          pfpUrl: playerData.pfpUrl,
+          score: gameOverData.score,
+          fid: playerData.fid,
+          game: 'Monad Jump'
+        })
+      });
+      if (res.status === 403) {
+        setShowGiftModal(false);
+        // alert('Score verification failed. Please refresh and try again.');
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to get signature');
+      const { signature } = await res.json();
+      switchChain({ chainId: monadTestnet.id })
+      writeContract({
+        abi: [
+          {
+            name: 'claimTokenReward',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'token', type: 'address' },
+              { name: 'amount', type: 'uint256' },
+              { name: 'signature', type: 'bytes' }
+            ],
+            outputs: []
+          }
+        ],
+        address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
+        functionName: 'claimTokenReward',
+        args: [
+          getTokenAddress(rewardType) as `0x${string}`,
+          BigInt(amountInt),
+          signature as `0x${string}`
+        ]
+      });
+    } catch (err: any) {
+      // error handled by wagmi
+    }
+  };
+
+  // Function to open the gift modal and set reward
+  const openGiftModal = () => {
+    const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
+    const amount = getRandomValue(rewardType);
+    setClaimedReward({ type: rewardType, amount });
+    setShowGiftModal(true);
+  };
+
+  // Show gift modal when new high score is achieved
+  useEffect(() => {
+    if (
+      gameOver &&
+      gameOverData.score > 0 &&
+      gameOverData.bestScore > gameOverData.previousBestScore
+    ) {
+      openGiftModal();
+    } else {
+      setShowGiftModal(false);
+    }
+  }, [gameOver, gameOverData]);
 
   const handleRestart = () => {
     setShowRestartBtn(false);
@@ -1713,6 +1805,48 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
          ▶ Play Again 
         </button>
       )}
+      <div style={{ position: 'absolute', top: 10, right: 20, zIndex: 2001, color: '#FFD700', fontWeight: 700, fontSize: 22 }}>
+        🏆 Best: {bestScore}
+      </div>
+      <GiftRewardModal
+        open={showGiftModal}
+        onClose={() => { setShowGiftModal(false); resetClaim(); }}
+        rewardType={claimedReward?.type as RewardToken || "MON"}
+        amount={claimedReward?.amount || 0}
+        tokenIcon={<span style={{fontSize: 32}}>🪙</span>}
+        tokenImg={getTokenImage((claimedReward?.type as RewardToken) || "MON")}
+        onClaim={handleClaimReward}
+        claimSuccess={claimSuccess}
+        claimError={
+          claimError
+            ? (claimErrorObj?.message?.toLowerCase().includes('user rejected')
+                ? 'You rejected the transaction. Please confirm the transaction in your wallet to claim your reward.'
+                : claimErrorObj?.message || "Transaction failed")
+            : null
+        }
+        onShare={async () => {
+          if (!actions || !actions.composeCast) return;
+          const rewardType = claimedReward?.type || "MON";
+          const amount = claimedReward?.amount || 0;
+          // Build share URL with reward details
+            const playerData = getPlayerData(context); // <-- Add this line
+            console.log(gameOverData);
+            const improvementText = gameOverData.score > gameOverData.previousBestScore && gameOverData.previousBestScore > 0 ? `+${Math.round(((gameOverData.score - gameOverData.previousBestScore) / gameOverData.previousBestScore) * 100)}% from best` : '';
+            const shareParams = new URLSearchParams({
+                  score: gameOverData.score.toString(),
+                  time: gameOverData.time,
+                  gameType: 'vertical-jump',
+                  ...(playerData.username && { username: playerData.username }),
+                  ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+                });
+          const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+          const shareText = `🎁 I just claimed a reward: ${amount} ${rewardType} and scored ${gameOverData.score} in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Hop up ! 🚀\n\n${improvementText}\n\nCan you beat my score? in Monad Realm!\n\nPlay and win your own rewards!`;
+          await actions.composeCast({
+            text: shareText,
+            embeds: [shareUrl],
+          });
+        }}
+      />
       <div 
         key={gameKey} 
         ref={gameRef} 
@@ -1751,5 +1885,5 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         }
       `}</style>
     </>
-  );
-} 
+  )
+  }

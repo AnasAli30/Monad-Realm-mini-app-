@@ -117,12 +117,13 @@ export async function getLeaderboard(
 }
 
 // Get player data from Farcaster context
-export function getPlayerData(context: any): { fid: number; username: string; pfpUrl: string } {
+export function getPlayerData(context: any): { fid: number; username: string; pfpUrl: string, address: string } {
   if (context?.user) {
     return {
       fid: context.user.fid || 0,
       username: context.user.username || `Player${Math.floor(Math.random() * 10000)}`,
-      pfpUrl: context.user.pfpUrl || ''
+      pfpUrl: context.user.pfpUrl || '',
+      address: context.user.walletAddress || ''
     };
   }
 
@@ -151,4 +152,15 @@ export function setPlayerName(name: string): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('playerName', name);
   }
+} 
+
+export function generateRandomKey() {
+  // 16 bytes random hex string
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export function generateFusedKey(randomKey: string, verificationSecret: string, score: number, fid: number) {
+  return keccak256(toUtf8Bytes(randomKey + verificationSecret + String(score) + String(fid)));
 } 
