@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Position parameters with updated defaults for Candy Crush layout
     const pfpX = '531';
     const pfpY = '192';
-    const scoreX = '210';
+    const scoreX = '170';
     const scoreY = '46';
     const levelX = '698';
     const levelY = '46';
