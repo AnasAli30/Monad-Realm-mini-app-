@@ -23,6 +23,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
   const [moves, setMoves] = useState(10);
   const [animatedScore, setAnimatedScore] = useState(0);
   const [previousBestScore, setPreviousBestScore] = useState(0);
+  const [gameKey, setGameKey] = useState<number>(0);
   
   // Challenge system state
   const [challengeCandyType, setChallengeCandyType] = useState('1');
@@ -66,6 +67,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
     setChallengeProgress(0);
     setAnimatedScore(0);
     setPreviousBestScore(0);
+    setGameKey((k: number) => k + 1); // Increment gameKey to remount game container
     
     if (gameRef.current) {
       const existingGame = gameRef.current.querySelector('canvas');
@@ -95,7 +97,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
         if (canvas) canvas.remove();
       }
     };
-  }, []);
+  }, [gameKey]);
 
   const initGame = () => {
     let scene: Phaser.Scene;
@@ -1544,14 +1546,11 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
         </div>
       )}
       
-      <div ref={gameRef} style={{ 
-        width: '100%', 
-        height: '100%',
-        opacity: gameInitialized ? 1 : 0,
-        filter: gameOverState ? 'blur(5px)' : 'none',
-        transition: 'opacity 0.3s ease, filter 0.5s ease',
-        position: 'relative'
-      }} />
+      <div
+        key={gameKey}
+        ref={gameRef}
+        style={{ width: '100vw', height: '100vh', position: 'fixed', top: 0, left: 0, zIndex: 1000, filter: gameOverState ? 'blur(2px)' : 'none', transition: 'filter 0.5s ease', background: 'linear-gradient(180deg, #f9f7f4 0%, #001122 100%)' }}
+      />
       
 
 
