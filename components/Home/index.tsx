@@ -205,6 +205,26 @@ const StoneShooterGame = dynamic(() => import('@/components/Home/StoneShooterGam
 
 const LeaderboardLoadingBar = () => {
   const [progress, setProgress] = useState(0);
+  // Get theme from Demo context (pass as prop or use window.localStorage fallback)
+  let theme: 'light' | 'dark' = 'light';
+  if (typeof window !== 'undefined') {
+    theme = (localStorage.getItem('monad-theme') as 'light' | 'dark') || 'light';
+  }
+  const themeColors = {
+    light: {
+      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)',
+      text: '#3b82f6',
+      bar: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+      barBg: 'rgba(0,0,0,0.05)',
+    },
+    dark: {
+      background: 'linear-gradient(135deg, #23272f 0%, #181a20 100%)',
+      text: '#FFD700',
+      bar: 'linear-gradient(90deg, #FFD700, #7c65c1)',
+      barBg: 'rgba(255,255,255,0.08)',
+    },
+  };
+  const colors = themeColors[theme];
   useEffect(() => {
     let frame: number;
     let start: number | null = null;
@@ -225,11 +245,13 @@ const LeaderboardLoadingBar = () => {
     <div style={{
       width: '100vw',
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)',
+      background: colors.background,
       position: 'relative',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      color: colors.text,
+      transition: 'background 0.3s, color 0.3s',
     }}>
       <div style={{
         position: 'absolute',
@@ -237,17 +259,17 @@ const LeaderboardLoadingBar = () => {
         left: 0,
         height: 4,
         width: '100%',
-        background: 'rgba(0,0,0,0.05)',
+        background: colors.barBg,
         zIndex: 10,
       }}>
         <div style={{
           height: '100%',
           width: `${progress}%`,
-          background: 'linear-gradient(90deg, #3b82f6, #06b6d4)',
+          background: colors.bar,
           transition: 'width 0.2s',
         }} />
       </div>
-      <span style={{ color: '#3b82f6', fontWeight: 600, fontSize: 18, opacity: 0.7 }}>Loading leaderboard...</span>
+      <span style={{ color: colors.text, fontWeight: 600, fontSize: 18, opacity: 0.7 }}>Loading leaderboard...</span>
     </div>
   );
 };
@@ -281,7 +303,7 @@ function ShareButton() {
       left: 0,
       right: 0,
       bottom: 0, // just above navbar
-      marginBottom: '10px',
+      margin: '40px 0px 30px 0px',
 
       display: 'flex',
       justifyContent: 'center',
@@ -329,6 +351,20 @@ export function Demo() {
     }
     return false;
   });
+
+  // THEME STATE
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('monad-theme') as 'light' | 'dark') || 'dark';
+    }
+    return 'dark';
+  });
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('monad-theme', theme);
+    }
+  }, [theme]);
+  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
 
   // Store user info to backend when game opens (once per session)
   useEffect(() => {
@@ -415,17 +451,97 @@ export function Demo() {
   };
 
   // Show loading screen until all images are loaded
+  // THEME COLORS
+  const themeColors = {
+    light: {
+      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)',
+      cardBg: 'white',
+      text: '#222',
+      buttonBg: 'linear-gradient(90deg, #0371c3 0%, #0d8ce8 100%)',
+      buttonText: 'white',
+      navBg: 'white',
+      navBorder: '1px solid rgba(255,255,255,0.1)',
+    },
+    dark: {
+      background: 'linear-gradient(135deg, #23272f 0%, #181a20 100%)',
+      cardBg: '#23272f',
+      text: '#f9f7f4',
+      buttonBg: 'linear-gradient(90deg, #23272f 0%, #3b82f6 100%)',
+      buttonText: 'white',
+      navBg: '#181a20',
+      navBorder: '1px solid #23272f',
+    },
+  };
+  const colors = themeColors[theme];
+
   if (!imagesLoaded) {
     return (
       <SafeAreaContainer insets={context?.client.safeAreaInsets}>
-        <div className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8">
+        <div
+          className="flex min-h-screen flex-col items-center justify-center p-4 space-y-8"
+          style={{
+            background: colors.background,
+            color: colors.text,
+            width: '100vw',
+            minHeight: '100vh',
+            transition: 'background 0.3s, color 0.3s',
+          }}
+        >
           <h1 className="text-3xl font-bold text-center">
             Monad Realm
           </h1>
         </div>
+        {/* THEME SCROLLBAR CSS */}
+        <style jsx global>{`
+          ::-webkit-scrollbar {
+            width: 10px;
+            background: ${theme === 'dark' ? '#181a20' : '#e8e6e3'};
+          }
+          ::-webkit-scrollbar-thumb {
+            background: ${theme === 'dark' ? '#23272f' : '#cfcfcf'};
+            border-radius: 8px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: ${theme === 'dark' ? '#31343a' : '#bdbdbd'};
+          }
+          html {
+            scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
+            scrollbar-width: thin;
+          }
+        `}</style>
       </SafeAreaContainer>
     );
   }
+
+  // THEME TOGGLE BUTTON
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      style={{
+        position: 'fixed',
+        top: 10,
+        right:20,
+        zIndex: 2001,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 8,
+        borderRadius: '50%',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        backgroundColor: theme === 'dark' ? '#23272f' : 'white',
+        transition: 'background 0.2s',
+      }}
+      aria-label="Toggle theme"
+    >
+      {theme === 'light' ? (
+        // Moon icon
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M21 12.79A9 9 0 0 1 12.21 3a7 7 0 1 0 8.79 9.79z" stroke="#7c65c1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      ) : (
+        // Sun icon
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5" stroke="#FFD700" strokeWidth="2"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#FFD700" strokeWidth="2" strokeLinecap="round"/></svg>
+      )}
+    </button>
+  );
 
   // Bottom Navigation Component
   const BottomNavbar = () => (
@@ -435,9 +551,8 @@ export function Demo() {
       left: 0,
       right: 0,
       height: '64px',
-      // width: '100vw',
-      background: 'white',
-      borderTop: '1px solid rgba(255,255,255,0.1)',
+      background: colors.navBg,
+      borderTop: colors.navBorder,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-around',
@@ -453,14 +568,13 @@ export function Demo() {
           alignItems: 'center',
           background: 'none',
           border: 'none',
-          color: currentTab === 'game' ? '#0371c3' : 'rgba(0,0,0,0.5)',
+          color: currentTab === 'game' ? (theme === 'dark' ? '#3b82f6' : '#0371c3') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
           fontSize: currentTab === 'game' ? '20px' : '18px',
           fontWeight: currentTab === 'game' ? 'bold' : 'normal',
           cursor: 'pointer',
         }}
       >
         <FontAwesomeIcon icon={faGamepadSolid} size="lg" style={{ opacity: currentTab === 'game' ? 1 : 0.5 }} />
-        {/* <span style={{ marginTop: 2 }}>Game</span> */}
       </button>
       <button
         onClick={() => setCurrentTab('earn')}
@@ -471,14 +585,13 @@ export function Demo() {
           background: 'none',
           border: 'none',
           opacity: 0.3,
-          color: currentTab === 'earn' ? '#FFD700' : 'rgba(0,0,0,0.5)',
+          color: currentTab === 'earn' ? (theme === 'dark' ? '#FFD700' : '#FFD700') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
           fontSize: currentTab === 'earn' ? '20px' : '16px',
           fontWeight: currentTab === 'earn' ? 'bold' : 'normal',
           cursor: 'pointer',
         }}
       disabled>
         <FontAwesomeIcon icon={faCoins} size="lg" />
-        {/* <span style={{ marginTop: 2 }}>Earn</span> */}
       </button>
       <button
         onClick={() => setCurrentTab('pvp')}
@@ -489,14 +602,13 @@ export function Demo() {
           background: 'none',
           border: 'none',
           opacity: 0.3,
-          color: currentTab === 'pvp' ? '#8b16b1' : 'rgba(0,0,0,0.5)',
+          color: currentTab === 'pvp' ? (theme === 'dark' ? '#8b16b1' : '#8b16b1') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
           fontSize: currentTab === 'pvp' ? '20px' : '16px',
           fontWeight: currentTab === 'pvp' ? 'bold' : 'normal',
           cursor: 'pointer',
         }}
       disabled>
         <FontAwesomeIcon icon={faUsers} size="lg" />
-        {/* <span style={{ marginTop: 2 }}>PvP</span> */}
       </button>
       <button
         onClick={() => setCurrentTab('leaderboard')}
@@ -506,14 +618,13 @@ export function Demo() {
           alignItems: 'center',
           background: 'none',
           border: 'none',
-          color: currentTab === 'leaderboard' ? '#FFD700' : 'rgba(0,0,0,0.5)',
+          color: currentTab === 'leaderboard' ? (theme === 'dark' ? '#FFD700' : '#FFD700') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
           fontSize: currentTab === 'leaderboard' ? '20px' : '18px',
           fontWeight: currentTab === 'leaderboard' ? 'bold' : 'normal',
           cursor: 'pointer',
         }}
       >
         <FontAwesomeIcon icon={faTrophy} size="lg" />
-        {/* <span style={{ marginTop: 2 }}>Leaderboard</span> */}
       </button>
     </div>
   );
@@ -533,103 +644,232 @@ export function Demo() {
     return (
       <div style={{ 
         paddingTop: '10px',
-        // paddingBottom: '20px',
         minHeight: '100vh',
-        paddingBottom: '60px', 
-        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
+        minWidth: '100vw',
+        padding: '30px 0px 60px 0px', 
+        background: colors.background,
+        color: colors.text,
+        transition: 'background 0.3s, color 0.3s',
+        position: 'relative',
+        overflowX: 'hidden',
       }}>
+        {/* Particle Background */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}>
+          {Array.from({ length: 20 }, (_, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                width: '4px',
+                height: '4px',
+                background: 'rgba(255, 255, 255, 0.6)',
+                borderRadius: '50%',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animation: 'float 4s ease-in-out infinite',
+                animationDelay: `${Math.random() * 4}s`,
+                animationDuration: `${4 + Math.random() * 2}s`,
+                opacity: 0.3
+              }}
+            />
+          ))}
+        </div>
+        {/* Absolutely position the theme toggle at the top right, above all content */}
+        {/* <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}> */}
+          <ThemeToggle />
+        {/* </div> */}
         <div className="flex min-h-screen flex-col items-center justify-center">
           <div className="text-center space-y-0 ">
-            
-            <div className="space-y-6">
-              <button
-                onClick={() => setSelectedGame('hop')}
-                style={{
-                  width: '20rem',
-                  height: '13rem',
-                  padding: '0', // removed left/right padding
-                  marginTop: '0rem',
-                  // paddingBottom: '1rem',
-                  background: `url('/images/hop.png')`,
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center bottom',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '1.5rem',
-                  borderRadius: '1rem',
-                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
-                  transform: 'scale(1.1)',
-                  transition: 'all 0.3s ease',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-             
-              >
-                 {/* Hop Up */}
-              </button>
-              
-              <button
-                onClick={() => setSelectedGame('candy')}
-                style={{
-                  width: '22rem',
-                  height: '11rem',
-                  padding: '0', // removed left/right padding
-                  background: `url('/images/mona.png')`,
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center bottom',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '1.5rem',
-                  borderRadius: '1rem',
-                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
-                  transform: 'scale(1)',
-                  transition: 'all 0.3s ease',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-          
-              >
-                
-              </button>
-              
-              <button
-                onClick={() => setSelectedGame('blaster')}
-                style={{
-                  width: '22rem',
-                  height: '14rem',
-                  padding: '0', // removed left/right padding
-                  background: `url('/images/bouce.png')`,
-                  backgroundSize: 'cover',
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'center bottom',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '1.5rem',
-                  borderRadius: '1rem',
-                  boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
-                  transform: 'scale(1)',
-                  transition: 'all 0.3s ease',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}
-              >
-              </button>
+            <div className="space-y-6" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+              {/* Hop Up Card */}
+              <div>
+                <button
+                  onClick={() => setSelectedGame('hop')}
+                  style={{
+                    width: '20rem',
+                    height: '13rem',
+                    padding: '0',
+                    marginTop: '0rem',
+                    background: `url('/images/hop.png')`,
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center bottom',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    borderRadius: '1rem 1rem 0rem 0rem',
+                    boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                    transform: 'scale(1.08)',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+               
+                </button>
+                <div style={{ marginTop: 0,width:'100%',scale:'1.08' }}>
+                  <button
+                    onClick={() => setSelectedGame('hop')}
+                    style={{
+                      background: 'linear-gradient(90deg, #0371c3 0%, #0d8ce8 100%)',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      width:'100%',
+                      fontSize: '1.1rem',
+                      borderRadius: '0rem 0rem 1rem 1rem',
+                      padding: '10px 36px',
+                      border: 'none',
+                      boxShadow: '0 2px 8px #0371c322',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    Play now
+                  </button>
+                </div>
+              </div>
+              {/* MonaCrush Card */}
+              <div>
+                <button
+                  onClick={() => setSelectedGame('candy')}
+                  style={{
+                    width: '22rem',
+                    height: '11rem',
+                    padding: '0',
+                    background: `url('/images/mona.png')`,
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center bottom',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    borderRadius: '1rem 1rem 0rem 0rem',
+                    boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                    transform: 'scale(1)',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                </button>
+                <div style={{  display: 'flex', justifyContent: 'center',width:"100%",scale:'1' }}>
+                  <button
+                    onClick={() => setSelectedGame('candy')}
+                    style={{
+                      background: 'linear-gradient(90deg, #aa1c15 0%, #d4251c 100%)',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem',
+                      borderRadius: '0rem 0rem 1rem 1rem',
+                      width:'100%',
+                      padding: '10px 36px',
+                      border: 'none',
+                      boxShadow: '0 2px 8px #aa1c1522',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    Play now
+                  </button>
+                </div>
+              </div>
+              {/* Bounce Blaster Card */}
+              <div>
+                <button
+                  onClick={() => setSelectedGame('blaster')}
+                  style={{
+                    width: '22rem',
+                    height: '14rem',
+                    padding: '0',
+                    background: `url('/images/bouce.png')`,
+                    backgroundSize: 'cover',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center bottom',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '1.5rem',
+                    borderRadius: '1rem 1rem 0rem 0rem',
+                    boxShadow: '0 15px 25px -5px rgba(0,0,0,0.2)',
+                    transform: 'scale(1)',
+                    transition: 'all 0.3s ease',
+                    border: 'none',
+                    cursor: 'pointer',
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                </button>
+                <div style={{ marginTop: 0, display: 'flex', justifyContent: 'center' , flexDirection:"column" }}>
+                  <button
+                    onClick={() => setSelectedGame('blaster')}
+                    style={{
+                      background: 'linear-gradient(90deg, #f9e7bc 0%, #f9e7bc 100%)',
+                      color: 'black',
+                      fontWeight: 'bold',
+                      fontSize: '1.1rem',
+                      borderRadius: '0rem 0rem 1rem 1rem',
+                      padding: '10px 36px',
+                      border: 'none',
+                      boxShadow: '0 2px 8px #0371c322',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    Play now
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
         <ShareButton />
         <BottomNavbar />
+        {/* Particle CSS */}
+        <style jsx>{`
+          @keyframes float {
+            0%, 100% {
+              transform: translateY(0px);
+              opacity: 0.3;
+            }
+            50% {
+              transform: translateY(-8px);
+              opacity: 0.6;
+            }
+          }
+        `}</style>
+        {/* THEME SCROLLBAR CSS */}
+        <style jsx global>{`
+          ::-webkit-scrollbar {
+            width: 10px;
+            background: ${theme === 'dark' ? '#181a20' : '#e8e6e3'};
+          }
+          ::-webkit-scrollbar-thumb {
+            background: ${theme === 'dark' ? '#23272f' : '#cfcfcf'};
+            border-radius: 8px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: ${theme === 'dark' ? '#31343a' : '#bdbdbd'};
+          }
+          html {
+            scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
+            scrollbar-width: thin;
+          }
+        `}</style>
       </div>
     );
   }
@@ -639,11 +879,34 @@ export function Demo() {
       <div style={{ 
         minHeight: '100vh', 
         paddingBottom: '80px', 
-        background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
+        background: colors.background,
+        color: colors.text,
+        transition: 'background 0.3s, color 0.3s',
       }}>
+        {/* <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}>
+          <ThemeToggle />
+        </div> */}
         <Leaderboard />
         <ShareButton />
         <BottomNavbar />
+        {/* THEME SCROLLBAR CSS */}
+        <style jsx global>{`
+          ::-webkit-scrollbar {
+            width: 10px;
+            background: ${theme === 'dark' ? '#181a20' : '#e8e6e3'};
+          }
+          ::-webkit-scrollbar-thumb {
+            background: ${theme === 'dark' ? '#23272f' : '#cfcfcf'};
+            border-radius: 8px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: ${theme === 'dark' ? '#31343a' : '#bdbdbd'};
+          }
+          html {
+            scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
+            scrollbar-width: thin;
+          }
+        `}</style>
       </div>
     );
   }
@@ -652,10 +915,14 @@ export function Demo() {
   return (
     <div style={{ 
       minHeight: '100vh', 
-      // width: '120vw',
       paddingBottom: '80px', 
-      background: 'linear-gradient(135deg, #f9f7f4 0%, #e8e6e3 100%)'
+      background: colors.background,
+      color: colors.text,
+      transition: 'background 0.3s, color 0.3s',
     }}>
+      <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}>
+        <ThemeToggle />
+      </div>
       <div className="flex min-h-screen flex-col items-center justify-center p-1 space-y-3">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Single Player Games</h1>
@@ -749,6 +1016,24 @@ export function Demo() {
       </div>
       <ShareButton />
       <BottomNavbar />
+      {/* THEME SCROLLBAR CSS */}
+      <style jsx global>{`
+        ::-webkit-scrollbar {
+          width: 10px;
+          background: ${theme === 'dark' ? '#181a20' : '#e8e6e3'};
+        }
+        ::-webkit-scrollbar-thumb {
+          background: ${theme === 'dark' ? '#23272f' : '#cfcfcf'};
+          border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${theme === 'dark' ? '#31343a' : '#bdbdbd'};
+        }
+        html {
+          scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
+          scrollbar-width: thin;
+        }
+      `}</style>
     </div>
   );
 }

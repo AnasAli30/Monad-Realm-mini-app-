@@ -131,7 +131,8 @@ export function getPlayerData(context: any): { fid: number; username: string; pf
   return {
     fid: Math.floor(Math.random() * 1000000), // Generate random FID for testing
     username: `Player${Math.floor(Math.random() * 10000)}`,
-    pfpUrl: ''
+    pfpUrl: '',
+    address: ''
   };
 }
 
