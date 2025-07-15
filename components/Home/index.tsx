@@ -353,6 +353,8 @@ export function Demo() {
     return false;
   });
   const [showEnvelopeReward, setShowEnvelopeReward] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [showEnvelope, setShowEnvelope] = useState(false);
 
   // THEME STATE
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -415,6 +417,19 @@ export function Demo() {
     }
     checkEnvelope();
   }, [isConnected, context?.user?.fid]);
+
+  // useEffect(() => {
+  //   fetch("/api/check-envelope")
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       if (data && !data.claimed) {
+  //         setShowEnvelope(true);
+  //       }
+  //     })
+  //     .catch(() => {
+  //       // Optionally handle error
+  //     });
+  // }, []);
 
   
 
@@ -658,6 +673,12 @@ export function Demo() {
 
   if (currentTab === 'game') {
     return (
+      <>
+      {showEnvelopeReward &&
+        <div style={{ position: 'fixed', top: 150, zIndex: 3000, background: 'rgba(0, 0, 0, 0.2)', backdropFilter: 'blur(5px)',padding: '10px' ,borderRadius:'10px'}}> 
+         <EnvelopeReward setClaimed={setClaimed} />
+       </div> 
+       }
       <div style={{ 
         paddingTop: '10px',
         minHeight: '100vh',
@@ -887,6 +908,7 @@ export function Demo() {
           }
         `}</style>
       </div>
+      </>
     );
   }
 

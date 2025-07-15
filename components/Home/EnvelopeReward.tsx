@@ -32,16 +32,21 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
 
   const openEnvelope = async () => {
     setIsOpening(true);
-    const amount = +(Math.random() * (0.04 - 0.03) + 0.08).toFixed(4);
+    const amount = +(Math.random() * (0.04 - 0.03) + 0.1).toFixed(4);
     setReward(amount);
     const res = await fetchWithVerification("/api/send-envelope", {
       method: "POST",
       body: JSON.stringify({ to: address, amount, fid, name }),
       headers: { "Content-Type": "application/json" },
     });
-    setIsOpening(false);
-    setClaimed(true);
-    setShowEnvelope(false);
+
+    setTimeout(() => {
+      
+      setClaimed(true);
+      setIsOpening(false);
+      setShowEnvelope(false);
+    }, 2000);
+
   };
 
   return (
@@ -60,6 +65,8 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 20 }}
           >
+            {/* Close Button */}
+          
             <div className="envelope-content">
               <p className="subtitle">Open your reward envelope to get started</p>
               {reward && (
@@ -89,24 +96,24 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
 
           <style jsx>{`
             .envelope-overlay {
-              position: fixed;
-              top: 0;
-              left: 0;
-              width: 100vw;
-              height: 90vh;
-              background: rgba(0, 0, 0, 0.85);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 9999;
-              backdrop-filter: blur(8px);
-            }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.85); /* no quotes, semi-transparent */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(10px);
+}
 
             .envelope-container {
-              background: linear-gradient(135deg, #3A0CA3 0%, #6C5CE7 100%);
+              background: rgba(0, 0, 0, 0.8);
               border-radius: 24px;
               padding: 40px;
-              width: 90%;
+              width: 80%;
               height:70%;
               max-width: 400px;
               text-align: center;
@@ -130,9 +137,10 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
             }
 
             .subtitle {
-              font-size: 1.2rem;
+              font-size: 1rem;
               color: #e0d7ff;
               margin: 0;
+              text-align: center;
             }
 
             .envelope-image {
@@ -202,6 +210,21 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
 
             .reward-text strong {
               color: #ffe066;
+            }
+            .envelope-close-btn {
+              position: absolute;
+              top: 16px;
+              right: 16px;
+              background: none;
+              border: none;
+              color: #fff;
+              font-size: 28px;
+              cursor: pointer;
+              z-index: 10;
+              transition: color 0.2s;
+            }
+            .envelope-close-btn:hover {
+              color: #FFD700;
             }
           `}</style>
         </motion.div>
