@@ -10,6 +10,7 @@ import { faGamepad as faGamepadSolid, faCoins, faUsers, faTrophy } from '@fortaw
 import { useAccount, useSwitchChain } from 'wagmi';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { monadTestnet } from 'wagmi/chains';
+import { EnvelopeReward } from './EnvelopeReward';
 
 // Dynamic Loading Component
 const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
@@ -351,6 +352,7 @@ export function Demo() {
     }
     return false;
   });
+  const [showEnvelopeReward, setShowEnvelopeReward] = useState(false);
 
   // THEME STATE
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -399,6 +401,20 @@ export function Demo() {
     
     actions?.addFrame()
   },[isConnected,context])
+
+  useEffect(() => {
+    async function checkEnvelope() {
+      if (!isConnected || !context?.user?.fid) return;
+      const res = await fetch('/api/check-envelope', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fid: context.user.fid })
+      });
+      const data = await res.json();
+      if (!data.claimed) setShowEnvelopeReward(true);
+    }
+    checkEnvelope();
+  }, [isConnected, context?.user?.fid]);
 
   
 

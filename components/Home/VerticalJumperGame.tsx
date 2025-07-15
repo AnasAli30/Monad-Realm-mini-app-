@@ -1545,14 +1545,13 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   // Hide status after 1s only on error
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
-    if (showSubmitScoreStatus && submitScoreError) {
+    if (submitScoreError) {
       timer = setTimeout(() => {
-        setShowSubmitScoreStatus(false);
         resetSubmitScore();
       }, 1000);
       return () => { if (timer) clearTimeout(timer); };
     }
-  }, [showSubmitScoreStatus, submitScoreError, resetSubmitScore]);
+  }, [ submitScoreError, resetSubmitScore]);
 
   
 
