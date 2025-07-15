@@ -59,7 +59,7 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
 
     setTimeout(() => {
        actions?.composeCast({
-        text: `I just opened my envelope and got ${amount} MON! \n\n you can get 0.1-1 MON here:`,
+        text: `I just opened my envelope and got ${amount} MON! \n\n you can get 0.1-1 MON here`,
         embeds: [APP_URL],
       });
       setClaimed(true);
