@@ -45,6 +45,9 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   const [showConfirmEnd, setShowConfirmEnd] = useState(false);
   const { writeContract, data: claimData, isSuccess: claimSuccess, isError: claimError, error: claimErrorObj, reset: resetClaim } = useContractWrite();
   const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimData });
+  // Add state for blockchain submission status
+  const [showSubmitScoreStatus, setShowSubmitScoreStatus] = useState(false);
+  const { writeContract: writeSubmitScore, data: submitScoreTx, isSuccess: submitScoreSuccess, isError: submitScoreError, error: submitScoreErrorObj, reset: resetSubmitScore } = useContractWrite();
 
   // --- Touch/Mouse controls for button mode ---
   useEffect(() => {
@@ -150,21 +153,17 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
 
   // Restart game handler
   const handleRestart = () => {
-    console.log('Restart button clicked');
     setShowRestartBtn(false);
     setGameReady(false);
     setGameOver(false);
     setGameOverData({ score: 0, time: '00:00', bestScore: 0, previousBestScore: 0, stonesDestroyed: 0, playerHits: 0 });
     setAnimatedScore(0);
-    
+    setPreviousBestScore(parseInt(localStorage.getItem('stoneShooterMaxScore') || '0'));
     // Reset tilt controls
     tiltXRef.current = 0;
-    console.log('Tilt reset to:', tiltXRef.current);
-    
     phaserGameRef.current?.destroy(true);
     phaserGameRef.current = null;
     setGameKey((k) => k + 1);
-    console.log('Game key incremented, new game will start');
   };
 
   useEffect(() => {
@@ -1400,6 +1399,52 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
     []
   );
 
+  // Trigger blockchain submission on game over (not high score)
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (
+      gameOver &&
+      gameOverData.score > 0 &&
+      gameOverData.bestScore === gameOverData.previousBestScore
+    ) {
+      setShowSubmitScoreStatus(true);
+      timer = setTimeout(() => {
+        const playerData = getPlayerData(context);
+        switchChain({ chainId: monadTestnet.id });
+        writeSubmitScore({
+          abi: [
+            {
+              "inputs": [
+                { "internalType": "string", "name": "username", "type": "string" },
+                { "internalType": "uint256", "name": "score", "type": "uint256" }
+              ],
+              "name": "submitScore",
+              "outputs": [],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ],
+          address: "0x6Fc22a9e82F8008B04c7fa14b07A09212660c0B2",
+          functionName: "submitScore",
+          args: [playerData.username, BigInt(gameOverData.score)]
+        });
+      }, 2000);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+  }, [gameOver, gameOverData, context, switchChain, writeSubmitScore]);
+
+  // Hide status after 1s only on error
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (showSubmitScoreStatus && submitScoreError) {
+      timer = setTimeout(() => {
+        setShowSubmitScoreStatus(false);
+        resetSubmitScore();
+      }, 1000);
+      return () => { if (timer) clearTimeout(timer); };
+    }
+  }, [showSubmitScoreStatus, submitScoreError, resetSubmitScore]);
+
   if (controlMode === null) {
     return (
       <div style={{
@@ -1518,7 +1563,6 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           >
             ◀ Games
           </button>
-          
           <div style={{
             position: 'fixed',
             top: -50,
@@ -1541,7 +1585,92 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
             }}>
               GAME OVER
             </h1>
-
+            {/* Blockchain submission status for non-high score */}
+            {showSubmitScoreStatus && (
+              <div
+                style={{
+                  margin: '0px 0px 10px 0px',
+                  padding: '5px 10px',
+                  borderRadius: 14,
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  minWidth: 200,
+                  maxWidth: 400,
+                  background:
+                    submitScoreSuccess
+                      ? ' rgba(0,0,0,0.38)'
+                      : submitScoreError
+                        ? ' rgba(0,0,0,0.38)'
+                        : ' rgba(0,0,0,0.38)',
+                  color:
+                    submitScoreSuccess
+                      ? '#fff'
+                      : submitScoreError
+                        ? '#fff'
+                        : '#fff',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  transition: 'all 0.3s',
+                  border: submitScoreSuccess
+                    ? '2px solid #fff'
+                    : submitScoreError
+                      ? '2px solid #fff'
+                      : '',
+                  position: 'relative',
+                  zIndex: 2000,
+                  cursor:'pointer'
+                }}
+              >
+                {submitScoreSuccess ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: 20, marginBottom: 1 }}>
+                      <span style={{ fontSize: 20, color: '#1a7f37' }}>✔️</span>
+                      <span>Score Stored!</span>
+                    </div>
+                    {submitScoreTx && (
+                      <button
+                        onClick={() => actions?.openUrl(`https://testnet.monadexplorer.com/tx/${submitScoreTx}`)}
+                        style={{
+                          marginTop: 8,
+                          fontSize: 13,
+                          color: '#fff',
+                          background: 'linear-gradient(90deg, #7C65C1 0%, #4e3a8c 100%)',
+                          padding: '7px 18px',
+                          borderRadius: 7,
+                          textDecoration: 'none',
+                          fontWeight: 700,
+                          boxShadow: '0 2px 8px rgba(124,101,193,0.12)',
+                          transition: 'background 0.2s',
+                          display: 'inline-block',
+                          cursor:'pointer',
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        View Transaction ↗
+                      </button>
+                    )}
+                  </>
+                ) : submitScoreError ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 20 }}>
+                    <span style={{ fontSize: 26, color: '#b91c1c' }}>❌</span>
+                    <span>{'Error submitting score.'}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center',flexDirection:"column", fontSize: 19 }}>
+                    <span style={{ display: 'inline-block', width: 25, height: 25 }}>
+                      <svg width="22" height="22" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" opacity="0.3"/><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" strokeDasharray="31.4 94.2" strokeLinecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>
+                    </span>
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+                    <span>Storing score on blockchain...</span>
+                    <span style={{fontSize: 12, color: '#fff'}}>Confirm Transaction</span>
+                    </div>
+                 
+                  </div>
+                )}
+              </div>
+            )}
             <button style={{
               fontSize: '40px',
               fontWeight: 'bold',

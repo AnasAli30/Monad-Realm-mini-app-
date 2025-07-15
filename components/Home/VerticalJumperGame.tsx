@@ -44,6 +44,10 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   });
   const [claimedReward, setClaimedReward] = useState<{ type: string, amount: number } | null>(null);
   
+  // Add state for submit score modal
+  const [showSubmitScoreModal, setShowSubmitScoreModal] = useState(false);
+  const { writeContract: writeSubmitScore, data: submitScoreTx, isSuccess: submitScoreSuccess, isError: submitScoreError, error: submitScoreErrorObj, reset: resetSubmitScore } = useContractWrite();
+  
   console.log('🎮 [MONAD JUMP] Component state initialized, gameKey:', gameKey);
 
   // Score counting animation
@@ -1495,6 +1499,63 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     }
   }, [gameOver, gameOverData]);
 
+  // Show submit score modal if not a new high score
+  useEffect(() => {
+    if (
+      gameOver &&
+      gameOverData.score > 0 &&
+      gameOverData.bestScore === gameOverData.previousBestScore // not a new high score
+    ) {
+      setShowSubmitScoreModal(true);
+    } else {
+      setShowSubmitScoreModal(false);
+    }
+  }, [gameOver, gameOverData]);
+
+  // Automatically submit score when modal is shown, but delay by 2 seconds
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (showSubmitScoreModal) {
+      timer = setTimeout(() => {
+        const playerData = getPlayerData(context);
+        switchChain({ chainId: monadTestnet.id });
+        writeSubmitScore({
+          abi: [
+            {
+              "inputs": [
+                { "internalType": "string", "name": "username", "type": "string" },
+                { "internalType": "uint256", "name": "score", "type": "uint256" }
+              ],
+              "name": "submitScore",
+              "outputs": [],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ],
+          address: "0x6Fc22a9e82F8008B04c7fa14b07A09212660c0B2",
+          functionName: "submitScore",
+          args: [playerData.username, BigInt(gameOverData.score)]
+        });
+      }, 2000);
+    }
+    return () => { if (timer) clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSubmitScoreModal]);
+
+  // Hide status after 1s only on error
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (showSubmitScoreStatus && submitScoreError) {
+      timer = setTimeout(() => {
+        setShowSubmitScoreStatus(false);
+        resetSubmitScore();
+      }, 1000);
+      return () => { if (timer) clearTimeout(timer); };
+    }
+  }, [showSubmitScoreStatus, submitScoreError, resetSubmitScore]);
+
+  
+
   const handleRestart = () => {
     setShowRestartBtn(false);
     setGameOver(false);
@@ -1504,6 +1565,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     phaserGameRef.current?.destroy(true);
     phaserGameRef.current = null;
     setGameKey((k) => k + 1);
+    setShowSubmitScoreModal(false);
+    resetSubmitScore();
   };
 
   const requestOrientationPermission = () => {
@@ -1526,7 +1589,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     return (
       <div style={{
         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-        background: '#87CEEB', zIndex: 3000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px',paddingTop: '100px'
+        background: '#46a6ce', zIndex: 3000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '20px',paddingTop: '100px'
       }}>
         <h2 style={{ color: 'white', fontSize: 32, marginBottom: 24 }}>Control Mode</h2>
         <button
@@ -1627,7 +1690,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           <button
             style={{
               position: 'fixed',
-              top: '30px',
+              top: '5px',
               left: '0px',
               zIndex: 2100,
               padding: '8px 16px',
@@ -1671,11 +1734,98 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
               fontWeight: 'bold',
               color: '#ffffff',
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-              margin: '0 0 20px 0',
+              margin: '0 0 5px 0',
               textAlign: 'center'
             }}>
               GAME OVER
             </h1>
+             {/* Submission status for non-high score */}
+            {gameOverData.score > 0 && gameOverData.bestScore === gameOverData.previousBestScore && (
+              <div
+                style={{
+                  margin: '0px 0px 10px 0px',
+                  padding: '5px 10px',
+                  borderRadius: 14,
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  minWidth: 200,
+                  maxWidth: 400,
+                  background:
+                    submitScoreSuccess
+                      ? 'transparent'
+                      : submitScoreError
+                        ? 'transparent'
+                        : 'transparent',
+                  color:
+                    submitScoreSuccess
+                      ? '#fff'
+                      : submitScoreError
+                        ? '#fff'
+                        : '#fff',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  transition: 'all 0.3s',
+                  border: submitScoreSuccess
+                    ? '1.5px solid #7be87b'
+                    : submitScoreError
+                      ? '1.5px solid #ffb3b3'
+                      : '1.5px solid #e0e0f0',
+                  position: 'relative',
+                  zIndex: 2000,
+                                      cursor:'pointer'
+
+                }}
+              >
+                {submitScoreSuccess ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', fontSize: 20, marginBottom: 1 }}>
+                      <span style={{ fontSize: 20, color: '#1a7f37' }}>✔️</span>
+                      <span>Score Stored!</span>
+                    </div>
+                    {submitScoreTx && (
+                      <button
+                        onClick={() => actions?.openUrl(`https://testnet.monadexplorer.com/tx/${submitScoreTx}`)}
+                        style={{
+                          marginTop: 8,
+                          fontSize: 13,
+                          color: '#fff',
+                          background: 'linear-gradient(90deg, #7C65C1 0%, #4e3a8c 100%)',
+                          padding: '7px 18px',
+                          borderRadius: 7,
+                          textDecoration: 'none',
+                          fontWeight: 700,
+                          boxShadow: '0 2px 8px rgba(124,101,193,0.12)',
+                          transition: 'background 0.2s',
+                          display: 'inline-block',
+                          cursor:'pointer',
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        View Transaction ↗
+                      </button>
+                    )}
+                  </>
+                ) : submitScoreError ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 20 }}>
+                    <span style={{ fontSize: 26, color: '#b91c1c' }}>❌</span>
+                    <span>{'Error submitting score.'}</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center',flexDirection:"column", fontSize: 19 }}>
+                    <span style={{ display: 'inline-block', width: 25, height: 25 }}>
+                      <svg width="22" height="22" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" opacity="0.3"/><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" strokeDasharray="31.4 94.2" strokeLinecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>
+                    </span>
+                    <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
+                    <span>Storing score on blockchain...</span>
+                    <span style={{fontSize: 12, color: '#fff'}}>Confirm Transaction</span>
+                    </div>
+                 
+                  </div>
+                )}
+              </div>
+            )}
                {/* Current Score */}
                <button style={{
               fontSize: '40px',
@@ -1749,6 +1899,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
               </div>
             </button>
             
+           
+            
             {/* Timer */}
             
             
@@ -1765,7 +1917,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
               margin: '0 0 20px 0',
               textAlign: 'center'
             }}>
-              Best
+            🏆 Best
               <p style={{ fontSize: '29px', fontWeight: 'bold', color: '#ffff00', margin: '3px 0 0 0' }}>{gameOverData.bestScore}</p>
             </div>
           </div>
@@ -1776,7 +1928,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         <button
           style={{ 
             position: 'fixed', 
-            bottom: '80px', 
+            bottom: '50px', 
             left: '50%', 
             transform: 'translateX(-50%)',
             zIndex: 2000,
@@ -1805,9 +1957,9 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
          ▶ Play Again 
         </button>
       )}
-      <div style={{ position: 'absolute', top: 10, right: 20, zIndex: 2001, color: '#FFD700', fontWeight: 700, fontSize: 22 }}>
-        🏆 Best: {bestScore}
-      </div>
+      {/* <div style={{ position: 'absolute', top: 10, right: 20, zIndex: 2001, color: '#FFD700', fontWeight: 700, fontSize: 22 }}>
+         Best: {bestScore}
+      </div> */}
       <GiftRewardModal
         open={showGiftModal}
         onClose={() => { setShowGiftModal(false); resetClaim(); }}
