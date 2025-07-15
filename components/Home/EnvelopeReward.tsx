@@ -2,12 +2,14 @@ import React, { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { useAccount } from "wagmi";
 import { useMiniAppContext } from "@/hooks/use-miniapp-context";
 import { motion, AnimatePresence } from "framer-motion";
+import { APP_URL } from "@/lib/constants";
 import { fetchWithVerification } from "@/lib/leaderboard"; 
 interface EnvelopeRewardProps {
   setClaimed: Dispatch<SetStateAction<boolean>>;
 }
 
 export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
+   const { actions } = useMiniAppContext();
   const { isConnected, address } = useAccount();
   const { context } = useMiniAppContext();
   const fid = context?.user?.fid;
@@ -17,6 +19,14 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
   const [reward, setReward] = useState<number | null>(null);
 
   useEffect(() => {
+    if (!fid) return;
+    // Check localStorage first
+    const claimedKey = `envelope-claimed-${fid}`;
+    if (localStorage.getItem(claimedKey) === 'true') {
+      setClaimed(true);
+      setShowEnvelope(false);
+      return;
+    }
     if (isConnected && address && fid) {
       fetch("/api/check-envelope", {
         method: "POST",
@@ -25,7 +35,13 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
       })
         .then((res) => res.json())
         .then((data) => {
-          if (!data.claimed) setShowEnvelope(true);
+          if (!data.claimed) {
+            setShowEnvelope(true);
+          } else {
+            setClaimed(true);
+            setShowEnvelope(false);
+            localStorage.setItem(claimedKey, 'true');
+          }
         });
     }
   }, [isConnected, address, fid]);
@@ -41,7 +57,10 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
     });
 
     setTimeout(() => {
-      
+       actions?.composeCast({
+        text: `I just opened my envelope and got ${amount} MON! \n\n you can get 0.1-1 MON here:`,
+        embeds: [APP_URL],
+      });
       setClaimed(true);
       setIsOpening(false);
       setShowEnvelope(false);

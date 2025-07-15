@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Monad Realm',
-  description: 'A template for building mini-apps on Farcaster and Monad',
+  description: 'A mini-app for Monad',
 }
 
 export default function RootLayout({

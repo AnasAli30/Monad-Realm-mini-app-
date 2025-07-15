@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // ConfettiExplosion is a placeholder import; user must install the package: pnpm add react-confetti-explosion
 // @ts-ignore
 import ConfettiExplosion from 'react-confetti-explosion';
@@ -18,8 +18,16 @@ interface GiftRewardModalProps {
 }
 
 export const GiftRewardModal: React.FC<GiftRewardModalProps> = ({ open, onClose, rewardType, amount, tokenIcon, tokenImg, onClaim, claimSuccess = false, claimError = null, txHash, onShare }) => {
+  // All hooks must be before any return
   const [opened, setOpened] = useState(false);
   const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    if (claimSuccess) {
+      onShare?.();
+    }
+  }, [claimSuccess]);
+
   if (!open) return null;
 
   // Handler for claim button
