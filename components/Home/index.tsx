@@ -407,13 +407,19 @@ export function Demo() {
   useEffect(() => {
     async function checkEnvelope() {
       if (!isConnected || !context?.user?.fid) return;
+      if (localStorage.getItem(`envelope-claimed-${context.user.fid}`) === 'true') return;
       const res = await fetch('/api/check-envelope', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fid: context.user.fid })
       });
       const data = await res.json();
-      if (!data.claimed) setShowEnvelopeReward(true);
+      if (!data.claimed) {
+        setShowEnvelopeReward(true);
+      }else{
+        localStorage.setItem(`envelope-claimed-${context.user.fid}`, 'true');
+        setClaimed(true);
+      }
     }
     checkEnvelope();
   }, [isConnected, context?.user?.fid]);

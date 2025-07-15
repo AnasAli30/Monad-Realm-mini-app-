@@ -22,6 +22,7 @@ export function EnvelopeReward({ setClaimed }: EnvelopeRewardProps) {
     if (!fid) return;
     // Check localStorage first
     const claimedKey = `envelope-claimed-${fid}`;
+    console.log(claimedKey)
     if (localStorage.getItem(claimedKey) === 'true') {
       setClaimed(true);
       setShowEnvelope(false);
