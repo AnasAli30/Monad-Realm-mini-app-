@@ -13,6 +13,7 @@ interface GameData {
   stonesDestroyed?: number;
   playerHits?: number;
   lastPlayed: string;
+  currentSeason?: GameData; // Allow for nested currentSeason for type safety
 }
 
 interface PlayerDocument {
@@ -356,7 +357,7 @@ const Leaderboard = () => {
 
   const entryStyle: React.CSSProperties = {
     borderRadius: '20px',
-    padding: '10px',
+    padding: '5px 10px',
     transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
     cursor: 'pointer',
     position: 'relative',
@@ -374,7 +375,7 @@ const Leaderboard = () => {
   const profileContainerStyle: React.CSSProperties = {
     position: 'relative',
     width: '55px',
-    height: '50px',
+    // height: '50px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -419,7 +420,7 @@ const Leaderboard = () => {
   const playerStatsStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '4px',
     fontSize: '13px',
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: '4px',
@@ -715,7 +716,7 @@ const Leaderboard = () => {
             marginBottom: '16px',
             margin: 0
           }}>
-            1500 MON Reward Pool
+            2100 MON Reward Pool
           </h2>
           <p style={{
             color: 'rgba(255, 255, 255, 0.8)',
@@ -723,7 +724,7 @@ const Leaderboard = () => {
             lineHeight: '1.6',
             margin: '16px 0 24px 0'
           }}>
-            The total reward pool of <strong style={{ color: '#ffd700' }}>1500 MON</strong> will be distributed among the <strong style={{ color: '#ffd700' }}>top 10 players</strong> based on their scores across all games.
+            The total reward pool of <strong style={{ color: '#ffd700' }}>2100 MON</strong> will be distributed among the <strong style={{ color: '#ffd700' }}>top 20 players</strong> based on their scores across all games.
           </p>
           <div style={{
             background: 'rgba(59, 130, 246, 0.2)',
@@ -781,7 +782,7 @@ const Leaderboard = () => {
         </div>
         <div>
           <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600' }}>
-            1500 MON Pool
+            2100 MON Pool
           </div>
           <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
             Click trophy for details
@@ -1054,179 +1055,198 @@ const Leaderboard = () => {
 
       {/* Leaderboard Entries */}
       <div style={{ position: 'relative', zIndex: 1 }}>
-        
-        {leaderboardData.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '48px 0', 
-            color: '#ffffff'
-          }}>
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.8)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '20px',
-              padding: '32px',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              maxWidth: '300px',
-              margin: '0 auto'
+        {(() => {
+          const filteredSortedData = leaderboardData
+            .filter(entry =>
+              entry &&
+              (entry.gameData as any)?.currentSeason &&
+              typeof (entry.gameData as any).currentSeason.score === 'number' &&
+              !isNaN((entry.gameData as any).currentSeason.score)
+            )
+            .sort((a, b) =>
+              ((b.gameData as any)?.currentSeason?.score ?? 0) - ((a.gameData as any)?.currentSeason?.score ?? 0)
+            );
+          return filteredSortedData.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '48px 0', 
+              color: '#ffffff'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
-              <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
-                No champions yet!
-              </div>
-              <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                Be the first to claim glory in {gameKeyToName[selectedGame]}
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                padding: '32px',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                maxWidth: '300px',
+                margin: '0 auto'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
+                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                  No champions yet!
+                </div>
+                <div style={{ fontSize: '14px', opacity: 0.8 }}>
+                  Be the first to claim glory in {gameKeyToName[selectedGame]}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          leaderboardData.map((entry, index) => (
-            <div
-              key={entry._id || index}
-              style={{
-                ...entryStyle,
-                ...getCardStyle(index + 1),
-                animation: animationPhase === 'enter' ? `slideInUp 0.6s ease-out ${index * 0.1}s both` : 'none'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
-                e.currentTarget.style.boxShadow = index === 0 
-                  ? '0 15px 40px rgba(255, 215, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.2)'
-                  : index === 1
-                  ? '0 15px 40px rgba(192, 192, 192, 0.4), 0 0 0 1px rgba(192, 192, 192, 0.2)'
-                  : index === 2
-                  ? '0 15px 40px rgba(205, 127, 50, 0.4), 0 0 0 1px rgba(205, 127, 50, 0.2)'
-                  : '0 15px 40px rgba(0, 0, 0, 0.2)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                e.currentTarget.style.boxShadow = index === 0 
-                  ? '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 0 1px rgba(255, 215, 0, 0.1)'
-                  : index === 1
-                  ? '0 8px 32px rgba(192, 192, 192, 0.2), 0 0 0 1px rgba(192, 192, 192, 0.1)'
-                  : index === 2
-                  ? '0 8px 32px rgba(205, 127, 50, 0.2), 0 0 0 1px rgba(205, 127, 50, 0.1)'
-                  : '0 8px 32px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              {/* Shimmer Effect */}
-              {index < 3 && <div style={shimmerStyle}></div>}
-              
-              <div style={entryContentStyle} onClick={async()=>{
-              await sdk.actions.viewProfile({ 
-                fid: entry.fid ||249702 ,
-              })
-              }}>
-                {/* Profile Picture */}
-                <div style={profileContainerStyle}>
-                  <div style={profilePictureStyle}>
-                    {(entry.pfpUrl || (entry as any).pfpUrl) ? (
-                      <img
-                        src={entry.pfpUrl || (entry as any).pfpUrl}
-                        alt={`${entry.username || (entry as any).username}'s avatar`}
-                        style={profileImageStyle}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.parentElement.innerHTML = '👤';
-                          }
-                        }}
-                      />
-                    ) : (
-                      <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
-                        👤
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Rank Badge on top of profile image */}
-                  <div style={{
-                    ...getRankBadgeStyle(index + 1),
-                    position: 'absolute',
-                    top: '-5px',
-                    right: '-5px',
-                    width: '25px',
-                    height: '25px',
-                    fontSize: '14px',
-                    zIndex: 3
-                  }}>
-                    {getRankEmoji(index + 1)}
-                  </div>
-                </div>
-                
-                {/* Player Info */}
-                <div style={playerInfoStyle}>
-                  <div style={playerNameStyle}>
-                    {entry.username || (entry as any).username}
-                    {index === 0 && <span style={{ marginLeft: '8px' }}>👑</span>}
-                  </div>
-                  <div style={playerStatsStyle}>
-                    <span style={{ 
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '8px',
-                      padding: '2px 8px',
-                      fontSize: '11px'
+          ) : (
+            filteredSortedData.map((entry, index) => (
+              <div
+                key={entry._id || index}
+                style={{
+                  ...entryStyle,
+                  ...getCardStyle(index + 1),
+                  animation: animationPhase === 'enter' ? `slideInUp 0.6s ease-out ${index * 0.1}s both` : 'none'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                  e.currentTarget.style.boxShadow = index === 0 
+                    ? '0 15px 40px rgba(255, 215, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.2)'
+                    : index === 1
+                    ? '0 15px 40px rgba(192, 192, 192, 0.4), 0 0 0 1px rgba(192, 192, 192, 0.2)'
+                    : index === 2
+                    ? '0 15px 40px rgba(205, 127, 50, 0.4), 0 0 0 1px rgba(205, 127, 50, 0.2)'
+                    : '0 15px 40px rgba(0, 0, 0, 0.2)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                  e.currentTarget.style.boxShadow = index === 0 
+                    ? '0 8px 32px rgba(255, 215, 0, 0.2), 0 0 0 1px rgba(255, 215, 0, 0.1)'
+                    : index === 1
+                    ? '0 8px 32px rgba(192, 192, 192, 0.2), 0 0 0 1px rgba(192, 192, 192, 0.1)'
+                    : index === 2
+                    ? '0 8px 32px rgba(205, 127, 50, 0.2), 0 0 0 1px rgba(205, 127, 50, 0.1)'
+                    : '0 8px 32px rgba(0, 0, 0, 0.1)';
+                }}
+              >
+                {/* Shimmer Effect */}
+                {index < 3 && <div style={shimmerStyle}></div>}
+                <div style={entryContentStyle} onClick={async()=>{
+                  await sdk.actions.viewProfile({ 
+                    fid: entry.fid ||249702 ,
+                  })
+                }}>
+                  {/* Profile Picture */}
+                  <div style={profileContainerStyle}>
+                    <div style={profilePictureStyle}>
+                      {(entry.pfpUrl || (entry as any).pfpUrl) ? (
+                        <img
+                          src={entry.pfpUrl || (entry as any).pfpUrl}
+                          alt={`${entry.username || (entry as any).username}'s avatar`}
+                          style={profileImageStyle}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            if (e.currentTarget.parentElement) {
+                              e.currentTarget.parentElement.innerHTML = '👤';
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
+                          👤
+                        </div>
+                      )}
+                    </div>
+                    {/* Rank Badge on top of profile image */}
+                    <div style={{
+                      ...getRankBadgeStyle(index + 1),
+                      position: 'absolute',
+                      top: '-5px',
+                      right: '-5px',
+                      width: '25px',
+                      height: '25px',
+                      fontSize: '14px',
+                      zIndex: 3
                     }}>
-                      📅 {formatDate((entry as any).gameData?.lastPlayed || (entry as any).bestGame?.data?.lastPlayed || new Date())}
-                    </span>
-                    
-                    {/* Game Stats - Enhanced */}
-                    {((entry as any).gameData?.time || (entry as any).bestGame?.data?.time) && (
+                      {getRankEmoji(index + 1)}
+                    </div>
+                  </div>
+                  {/* Player Info */}
+                  <div style={playerInfoStyle}>
+                    <div style={playerNameStyle}>
+                      {entry.username || (entry as any).username}
+                      {index === 0 && <span style={{ marginLeft: '8px' }}>👑</span>}
+                    </div>
+                    <div style={playerStatsStyle}>
                       <span style={{ 
-                        background: 'rgba(59, 130, 246, 0.2)',
+                        background: 'rgba(255, 255, 255, 0.1)',
                         borderRadius: '8px',
                         padding: '2px 8px',
-                        fontSize: '11px',
-                        color: '#93c5fd'
+                        fontSize: '11px'
                       }}>
-                        ⏱️ {(() => {
-                          const t = (entry as any).gameData?.time || (entry as any).bestGame?.data?.time;
-                          // If t is a string in mm:ss format, show directly
-                          if (typeof t === 'string' && t.includes(':')) return t;
-                          // Otherwise, use formatTimer
-                          return formatTimer(t);
-                        })()}
+                        📅 {formatDate((entry as any).gameData?.currentSeason?.lastPlayed || new Date())}
                       </span>
-                    )}
-                    
-                   
-                    
-                   
+                      {/* Game Stats - Enhanced */}
+                      {((entry as any).gameData?.currentSeason?.time) && (
+                        <span style={{ 
+                          background: 'rgba(59, 130, 246, 0.2)',
+                          borderRadius: '8px',
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          color: '#93c5fd'
+                        }}>
+                          ⏱️ {(() => {
+                            const t = (entry as any).gameData?.currentSeason?.time;
+                            if (typeof t === 'string' && t.includes(':')) return t;
+                            return formatTimer(t);
+                          })()}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Score */}
-                <div style={scoreContainerStyle}>
-                  <div style={scoreStyle}>
-                    {(entry.score || (entry as any).bestGame?.score || 0).toLocaleString()}
-                  </div>
-                  {gameKeyToName[selectedGame] === 'Bounce Blaster' && ((entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed) && (
+                  {/* Score */}
+                  <div style={scoreContainerStyle}>
+                    <div style={scoreStyle}>
+                      {(entry.gameData as any)?.currentSeason?.score?.toLocaleString()}
+                      {typeof (entry.gameData as any)?.score === 'number' && (
+                        <span style={{
+                          display: 'block',
+                          background: 'gold',
+                          color: '#222',
+                          fontWeight: 'bold',
+                          fontSize: '11px',
+                          borderRadius: '6px',
+                          padding: '1px 6px',
+                          marginLeft: '8px',
+                          verticalAlign: 'middle',
+                          border: '1px solid #ffd700',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.07)'
+                        }}>
+                          Best: {(entry.gameData as any).score.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {gameKeyToName[selectedGame] === 'Bounce Blaster' && ((entry.gameData as any)?.currentSeason?.stonesDestroyed) && (
                       <span style={{ 
                         background: 'rgba(234, 88, 12, 0.2)',
                         borderRadius: '8px',
                         padding: '2px 8px',
                         fontSize: '11px',
-                        color: '#fed7aa'
+                        color: '#fed7aa',
+                        marginLeft: '2px'
                       }}>
-                        🎯 {(entry as any).gameData?.stonesDestroyed || (entry as any).bestGame?.data?.stonesDestroyed}
+                        🎯 {(entry.gameData as any)?.currentSeason?.stonesDestroyed}
                       </span>
                     )}
-                     {gameKeyToName[selectedGame] === 'Candy Crush' && ((entry as any).gameData?.level || (entry as any).bestGame?.data?.level) && (
+                    {gameKeyToName[selectedGame] === 'Candy Crush' && ((entry.gameData as any)?.currentSeason?.level) && (
                       <span style={{ 
                         background: 'rgba(219, 39, 119, 0.2)',
                         borderRadius: '8px',
                         padding: '2px 8px',
                         fontSize: '11px',
-                        color: '#fbcfe8'
+                        color: '#fbcfe8',
+                        marginLeft: '2px'
                       }}>
-                        🍭 L{(entry as any).gameData?.level || (entry as any).bestGame?.data?.level}
+                        🍭 L{(entry.gameData as any)?.currentSeason?.level}
                       </span>
                     )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
+            ))
+          );
+        })()}
       </div>
 
       {/* CSS Animations */}

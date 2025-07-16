@@ -40,6 +40,7 @@ interface PlayerDocument {
       stonesDestroyed?: number;
       playerHits?: number;
       lastPlayed: Date;
+      currentSeason?: { score: number }; // Added for new season tracking
     };
   };
   createdAt: Date;
@@ -92,14 +93,14 @@ export async function GET(request: NextRequest) {
     } else {
       // Get leaderboard for specific game
       pipeline = [
-        { $match: { [`games.${game}`]: { $exists: true } } },
+        { $match: { [`games.${game}.currentSeason.score`]: { $exists: true, $ne: null } } },
         {
           $project: {
             fid: 1,
             username: 1,
             pfpUrl: 1,
             gameData: `$games.${game}`,
-            score: `$games.${game}.score`
+            score: `$games.${game}.currentSeason.score`
           }
         },
         { $sort: { score: -1 } },
@@ -181,46 +182,57 @@ export async function POST(request: NextRequest) {
 
     // Ensure games object exists
     let playerGames = existingPlayer?.games || {};
+    const currentGameData = playerGames[sanitizedGame] || {};
+    const currentSeasonData = currentGameData.currentSeason || { score: 0 };
+    const allTimeBestScore = currentGameData.score || 0;
 
-    // Check if new score is better than existing score or if game entry does not exist
-    const currentGameData = playerGames[sanitizedGame];
-    const shouldUpdate = !currentGameData || sanitizedScore > currentGameData.score;
+    // Check if new score is better than current season
+    const shouldUpdateSeason = !currentSeasonData.score || sanitizedScore > currentSeasonData.score;
+    // Check if new score is better than all-time best
+    const shouldUpdateAllTime = !allTimeBestScore || sanitizedScore > allTimeBestScore;
 
     if (existingPlayer) {
-      if (shouldUpdate) {
-        // Update player with new best score or create new game entry
-        const result = await collection.updateOne(
-          { fid },
-          {
-            $set: {
-              username: sanitizedUsername,
-              pfpUrl: pfpUrl || existingPlayer.pfpUrl,
-              [`games.${sanitizedGame}`]: newGameData,
-              updatedAt: new Date()
-            }
-          }
-        );
-
-        // Get player's rank for this game
-        const rank = await collection.countDocuments({
-          [`games.${sanitizedGame}.score`]: { $gt: sanitizedScore }
-        }) + 1;
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            fid,
-            username: sanitizedUsername,
-            pfpUrl: pfpUrl || existingPlayer.pfpUrl,
-            score: sanitizedScore,
-            game: sanitizedGame,
-            rank
-          }
-        });
-      } else {
-        // Score not higher, do not update
-        return NextResponse.json({ success: true, data: { fid, username: sanitizedUsername, pfpUrl: pfpUrl || existingPlayer.pfpUrl, score: sanitizedScore, game: sanitizedGame, rank: null } });
+      // Build update object
+      const updateObj: any = {
+        username: sanitizedUsername,
+        pfpUrl: pfpUrl || existingPlayer.pfpUrl,
+        updatedAt: new Date(),
+      };
+      if (shouldUpdateSeason) {
+        updateObj[`games.${sanitizedGame}.currentSeason`] = newGameData;
       }
+      if (shouldUpdateAllTime) {
+        updateObj[`games.${sanitizedGame}.score`] = sanitizedScore;
+        // Optionally update other all-time fields
+        if (gameData?.level !== undefined) updateObj[`games.${sanitizedGame}.level`] = gameData.level;
+        if (gameData?.time !== undefined) updateObj[`games.${sanitizedGame}.time`] = gameData.time;
+        if (gameData?.stonesDestroyed !== undefined) updateObj[`games.${sanitizedGame}.stonesDestroyed`] = gameData.stonesDestroyed;
+        if (gameData?.playerHits !== undefined) updateObj[`games.${sanitizedGame}.playerHits`] = gameData.playerHits;
+        updateObj[`games.${sanitizedGame}.lastPlayed`] = new Date();
+      }
+      if (shouldUpdateSeason || shouldUpdateAllTime) {
+        await collection.updateOne(
+          { fid },
+          { $set: updateObj }
+        );
+      }
+
+      // Get player's rank for this game (all-time best)
+      const rank = await collection.countDocuments({
+        [`games.${sanitizedGame}.score`]: { $gt: sanitizedScore }
+      }) + 1;
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          fid,
+          username: sanitizedUsername,
+          pfpUrl: pfpUrl || existingPlayer.pfpUrl,
+          score: sanitizedScore,
+          game: sanitizedGame,
+          rank
+        }
+      });
     } else {
       // Player does not exist, create new player with this game entry
       const newPlayer: PlayerDocument = {
@@ -228,7 +240,10 @@ export async function POST(request: NextRequest) {
         username: sanitizedUsername,
         pfpUrl: pfpUrl || '',
         games: {
-          [sanitizedGame]: newGameData
+          [sanitizedGame]: {
+            ...newGameData,
+            currentSeason: newGameData // Initialize currentSeason with first score
+          }
         },
         createdAt: new Date(),
         updatedAt: new Date()
