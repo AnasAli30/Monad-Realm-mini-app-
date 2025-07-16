@@ -509,64 +509,6 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         collider.x = Phaser.Math.Between(0, 640);
         collider.refreshBody();
       });
-      this.physics.add.collider(player, enemies, (_: any, enemy: any) => {
-        if (enemy.enemyType === 'enemy2') return; // Ignore collision with enemy2
-        enemy.anims.stop();
-        player.anims.play('playerIdle', true);
-        // player.setTint('0xff0000')
-        // @ts-ignore
-        this.bgdMusic.stop();
-        // @ts-ignore
-        this.gameOverSound.play();
-        gameOver = true;
-        gameOverOverlay.visible = true; // Show blur overlay
-        // Hide Phaser text elements (we'll show them in React)
-        gameOverText.visible = false;
-        timerText.visible = false;
-        finalScoreText.visible = false;
-        maxScoreText.visible = false;
-        // Calculate game over data
-        const displayScore = Math.max(0, score - scorePenalty);
-        const minutes = Math.floor(gameTimer / 60);
-        const seconds = gameTimer % 60;
-        const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        const prevMaxScore = parseInt(localStorage.getItem('maxScore') || '0'); // Capture BEFORE updating
-        // Pass data to React state
-        setGameOverData({
-          score: displayScore,
-          time: formattedTime,
-          bestScore: Math.max(displayScore, prevMaxScore),
-          previousBestScore: prevMaxScore
-        });
-        setGameOver(true); // Set React state for blur effect
-        setShowRestartBtn(true);
-        // Submit score to leaderboard
-        const playerData = getPlayerData(context);
-        submitScore(playerData.fid, playerData.username, playerData.pfpUrl, displayScore, 'Monad Jump', {
-          time: formattedTime
-        }).then(result => {
-          if (result.success) {
-            console.log('Score submitted successfully:', result.data);
-          } else {
-            console.log('Failed to submit score:', result.error);
-          }
-        }).catch(error => {
-          console.error('Error submitting score:', error);
-        });
-        // Now update localStorage if needed
-        if (displayScore > prevMaxScore) {
-          localStorage.setItem('maxScore', displayScore.toString());
-          setBestScore(displayScore);
-        }
-        player.body.allowGravity = true;
-        player.setVelocityY(600);
-        player.body.checkCollision.none = true;
-        player.body.setVelocityX(0);
-        player.body.moves = true;
-        player.body.immovable = false;
-        player.body.enable = true;
-        player.setCollideWorldBounds(false);
-      });
       this.physics.add.collider(platforms, enemies, (collider: any) => {
         collider.x = Phaser.Math.Between(0, 640);
         collider.refreshBody();
@@ -1674,7 +1616,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
             alt="Player"
             style={{
               position: 'absolute',
-              left: 'calc(50% - 20px)', // center horizontally (image width is 120px)
+              left: 'calc(50% - 30px)', // center horizontally (image width is 120px)
               // width: '120px',
               // height: '120px',
               animation: 'fall-spin 2.5s linear infinite'
