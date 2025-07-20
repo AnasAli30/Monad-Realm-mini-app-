@@ -2195,13 +2195,16 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
           const improvementText = score > previousBestScore && previousBestScore > 0
             ? `+${Math.round(((score - previousBestScore) / previousBestScore) * 100)}% from best`
             : '';
-          const shareParams = new URLSearchParams({
-            score: score.toString(),
-            gameType: 'candy-crush',
-            ...(playerData.username && { username: playerData.username }),
-            ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
-          });
-          const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+            const shareParams = new URLSearchParams({
+              score: score.toString(),
+              level: level.toString(),
+              moves: moves.toString(),
+              gameType: 'candy-crush',
+              ...(playerData.username && { username: playerData.username }),
+              ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+            });
+            
+            const shareUrl = `${APP_URL}?${shareParams.toString()}`;
           const shareText = `🎁 I just claimed a reward: ${amount} ${rewardType} and scored ${score} in level ${level} in Mona Crush! \n🚀${improvementText}\n\nCan you beat my score?\nPlay and win your own rewards`;
           await actions.composeCast({
             text: shareText,
