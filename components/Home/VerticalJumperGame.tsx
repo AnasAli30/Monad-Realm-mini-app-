@@ -1766,7 +1766,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
                 });
                 
                 const shareUrl = `${APP_URL}?${shareParams.toString()}`;
-                
+                console.log(shareUrl)
                 if (actions && actions.composeCast) {
                   await actions.composeCast({
                     text: shareText,
@@ -1899,6 +1899,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
                   ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
                 });
           const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+          console.log(shareUrl)
           const shareText = `🎁 I just claimed a reward: ${amount} ${rewardType} and scored ${gameOverData.score} in ${gameOverData.time.split(':')[0]}m ${gameOverData.time.split(':')[1]}s in Hop up ! 🚀\n\n${improvementText}\n\nCan you beat my score? in Monad Realm!\n\nPlay and win your own rewards!`;
           await actions.composeCast({
             text: shareText,
