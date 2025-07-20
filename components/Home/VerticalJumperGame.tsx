@@ -477,25 +477,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           // Set normal jump velocity
           player.setVelocityY(-550);
           
-          // Apply dynamic gravity based on difficulty for faster landing
-          let gravityMultiplier;
-          switch (currentDiff) {
-            case 'easy':
-              gravityMultiplier = 1.0; // Normal gravity
-              break;
-            case 'normal':
-              gravityMultiplier = 1.2; // 20% faster falling
-              break;
-            case 'hard':
-              gravityMultiplier = 1.4; // 40% faster falling
-              break;
-            case 'extreme':
-              gravityMultiplier = 1.6; // 60% faster falling
-              break;
-            default:
-              gravityMultiplier = 1.0;
-          }
-          player.body.setGravityY(600 * (gravityMultiplier - 1)); // Additional gravity
+          // Removed dynamic gravity effects - keeping normal gravity
           
           // @ts-ignore
           this.jumpSound.play();
@@ -525,25 +507,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           // Set normal super jump velocity
           player.setVelocityY(-1000);
           
-          // Apply same dynamic gravity for food collection
-          let gravityMultiplier;
-          switch (currentDiff) {
-            case 'easy':
-              gravityMultiplier = 1.0; // Normal gravity
-              break;
-            case 'normal':
-              gravityMultiplier = 1.2; // 20% faster falling
-              break;
-            case 'hard':
-              gravityMultiplier = 1.4; // 40% faster falling
-              break;
-            case 'extreme':
-              gravityMultiplier = 1.6; // 60% faster falling
-              break;
-            default:
-              gravityMultiplier = 1.0;
-          }
-          player.body.setGravityY(600 * (gravityMultiplier - 1)); // Additional gravity
+          // Removed dynamic gravity effects for food collection - keeping normal gravity
           
           // @ts-ignore
           this.eatSound.play();
