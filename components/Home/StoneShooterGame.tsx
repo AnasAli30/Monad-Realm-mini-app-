@@ -1950,14 +1950,16 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           const improvementText = gameOverData.score > previousBestScore && previousBestScore > 0
             ? `+${Math.round(((gameOverData.score - previousBestScore) / previousBestScore) * 100)}% improvement from my Highest Score!`
             : '';
-          const shareParams = new URLSearchParams({
-            score: gameOverData.score.toString(),
-            time: gameOverData.time,
-            gameType: 'stone-shooter',
-            ...(playerData.username && { username: playerData.username }),
-            ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
-          });
-          const shareUrl = `${APP_URL}?${shareParams.toString()}`;
+            const shareParams = new URLSearchParams({
+              score: gameOverData.score.toString(),
+              time: gameOverData.time,
+              stonesDestroyed: gameOverData.stonesDestroyed.toString(),
+              playerHits: gameOverData.playerHits.toString(),
+              gameType: 'stone-shooter',
+              ...(playerData.username && { username: playerData.username }),
+              ...(playerData.pfpUrl && { userImg: playerData.pfpUrl }),
+            });
+            const shareUrl = `${APP_URL}?${shareParams.toString()}`;
           const shareText = `🎮 Just claimed a reward: ${amount} ${rewardType} and Scored ${gameOverData.score} points in Bounce Blaster! 💥\n\ ${gameOverData.stonesDestroyed} kills and survived ${gameOverData.playerHits} hits!\n🚀${improvementText}\n\nCan you beat my score?`;
           await actions.composeCast({
             text: shareText,
