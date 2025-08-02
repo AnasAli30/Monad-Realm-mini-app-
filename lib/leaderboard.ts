@@ -91,7 +91,7 @@ export async function submitScore(
 // Get leaderboard
 export async function getLeaderboard(
   game: string = 'all',
-  limit: number = 50
+  limit: number = 100
 ): Promise<{ success: boolean; data?: LeaderboardEntry[]; error?: string }> {
   try {
     const params = new URLSearchParams({
