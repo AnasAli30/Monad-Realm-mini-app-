@@ -142,7 +142,7 @@ const Leaderboard = () => {
       setIsLoading(true);
       setError(null);
       const gameName = gameKeyToName[selectedGame];
-      const response = await fetch(`/api/leaderboard?game=${encodeURIComponent(gameName)}&limit=50`);
+      const response = await fetch(`/api/leaderboard?game=${encodeURIComponent(gameName)}&limit=100`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
