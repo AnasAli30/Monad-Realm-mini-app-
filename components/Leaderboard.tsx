@@ -718,7 +718,7 @@ const Leaderboard = () => {
             marginBottom: '16px',
             margin: 0
           }}>
-            2100 MON Reward Pool
+            2500 MON Reward Pool
           </h2>
           <p style={{
             color: 'rgba(255, 255, 255, 0.8)',
@@ -726,7 +726,7 @@ const Leaderboard = () => {
             lineHeight: '1.6',
             margin: '16px 0 24px 0'
           }}>
-            The total reward pool of <strong style={{ color: '#ffd700' }}>2100 MON</strong> will be distributed among the <strong style={{ color: '#ffd700' }}>top 20 players</strong> based on their scores across all games.
+            The total reward pool of <strong style={{ color: '#ffd700' }}>2500 MON</strong> will be distributed among the <strong style={{ color: '#ffd700' }}>top 20 players</strong> based on their scores across all games.
           </p>
           <div style={{
             background: 'rgba(59, 130, 246, 0.2)',
@@ -784,7 +784,7 @@ const Leaderboard = () => {
         </div>
         <div>
           <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '600' }}>
-            2100 MON Pool
+            2500 MON Pool
           </div>
           <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
             Click trophy for details
@@ -1151,41 +1151,7 @@ const Leaderboard = () => {
                   {index < 3 && <div style={shimmerStyle}></div>}
                   
                   {/* Share Button - Only show for current user */}
-                  {isCurrentUser && (
-                    <button
-                      onClick={() => handleShare(entry, rank)}
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '36px',
-                        height: '36px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        zIndex: 10,
-                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
-                        transition: 'all 0.3s ease',
-                        fontSize: '14px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.6)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
-                      }}
-                      title="Share your achievement!"
-                    >
-                      <FontAwesomeIcon icon={faShare} />
-                    </button>
-                  )}
+                  
                   
                   <div style={entryContentStyle} onClick={async()=>{
                     await sdk.actions.viewProfile({ 
@@ -1308,7 +1274,38 @@ const Leaderboard = () => {
                         </span>
                       )}
                     </div>
+                    
                   </div>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => handleShare(entry, rank)}
+                      style={{
+                        position: 'relative',
+                        // bottom: '10px',
+                        // left: '10px',
+                        background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '20px',
+                        marginTop:"10px",
+                        // width: '36px',
+                        width:"100%",
+                        height: '45px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        zIndex: 10,
+                        boxShadow: '0 4px 12px rgba(59, 130, 246, 0.4)',
+                        transition: 'all 0.3s ease',
+                        fontSize: '18px'
+                      }}
+                     
+                      title="Share your achievement!"
+                    >
+                      <FontAwesomeIcon icon={faShare} />  Share
+                    </button>
+                  )}
                 </div>
               );
             })

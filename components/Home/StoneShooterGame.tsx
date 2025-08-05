@@ -1663,7 +1663,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
                       <svg width="22" height="22" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" opacity="0.3"/><circle cx="25" cy="25" r="20" stroke="#fff" strokeWidth="5" fill="none" strokeDasharray="31.4 94.2" strokeLinecap="round"><animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite"/></circle></svg>
                     </span>
                     <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'}}>
-                    <span>Storing score on blockchain...</span>
+                    <span>Storing score onChain...</span>
                     <span style={{fontSize: 12, color: '#fff'}}>Confirm Transaction</span>
                     </div>
                  

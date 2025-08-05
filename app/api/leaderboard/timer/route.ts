@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (!doc ) {
       return NextResponse.json({ success: false, error: 'Timer not found' }, { status: 404 });
     }
-    return NextResponse.json({ timer: "1754241350" , success: true});
+    return NextResponse.json({ timer: "1755055350" , success: true});
   } catch (error) {
     console.error('Error fetching timer:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch timer' }, { status: 500 });
