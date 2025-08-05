@@ -129,6 +129,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     
     // Store mute state for use in game functions
     const gameMuted = isMuted;
+    let currentScene: GameScene | null = null;
 
     // Function to determine difficulty based on score
     const getDifficulty = (currentScore: number) => {
@@ -178,6 +179,14 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     let finalScoreText: Phaser.GameObjects.Text;
     let maxScoreText: Phaser.GameObjects.Text;
     let gameOverOverlay: Phaser.GameObjects.Graphics;
+    
+    // Extend Scene type to include sound properties
+    interface GameScene extends Phaser.Scene {
+      bgdMusic?: Phaser.Sound.BaseSound;
+      jumpSound?: Phaser.Sound.BaseSound;
+      eatSound?: Phaser.Sound.BaseSound;
+      gameOverSound?: Phaser.Sound.BaseSound;
+    }
 
     function preload(this: Phaser.Scene) {
       console.log('📦 [MONAD JUMP] PRELOAD started - loading assets...');
@@ -205,7 +214,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       console.log('📦 [MONAD JUMP] PRELOAD completed - all assets queued');
     }
 
-    function create(this: Phaser.Scene) {
+    function create(this: GameScene) {
+      currentScene = this;
       console.log('🎨 [MONAD JUMP] CREATE started - building game scene...');
       
       // Remove previous bg logic, use tileSprite
@@ -514,8 +524,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           
           // Removed dynamic gravity effects - keeping normal gravity
           
-          // @ts-ignore
-          if (!gameMuted) {
+          if (!gameMuted && this.jumpSound) {
             this.jumpSound.play();
           }
           // Sparkle effect from the player's feet - Create only 5 sparkles for better performance
@@ -546,8 +555,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           
           // Removed dynamic gravity effects for food collection - keeping normal gravity
           
-          // @ts-ignore
-          if (!gameMuted) {
+          if (!gameMuted && this.eatSound) {
             this.eatSound.play();
           }
         }
@@ -883,7 +891,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         });
       }
       
-      checkIfFall(this.physics);
+              checkIfFall(this.physics);
       updateScore();
     }
 
@@ -1167,9 +1175,8 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         gameOverOverlay.visible = true; // Show blur overlay
         
         // Play game over sound if not muted
-        // @ts-ignore
-        if (!gameMuted && this.gameOverSound) {
-          this.gameOverSound.play();
+        if (!gameMuted && currentScene?.gameOverSound) {
+          currentScene.gameOverSound.play();
         }
         
         // Hide Phaser text elements (we'll show them in React)
