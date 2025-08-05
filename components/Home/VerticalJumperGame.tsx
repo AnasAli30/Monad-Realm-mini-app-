@@ -48,7 +48,39 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   const [showSubmitScoreModal, setShowSubmitScoreModal] = useState(false);
   const { writeContract: writeSubmitScore, data: submitScoreTx, isSuccess: submitScoreSuccess, isError: submitScoreError, error: submitScoreErrorObj, reset: resetSubmitScore } = useContractWrite();
   
+  // Add mute state
+  const [isMuted, setIsMuted] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('gameMuted') === 'true';
+    }
+    return false;
+  });
+  
   console.log('🎮 [MONAD JUMP] Component state initialized, gameKey:', gameKey);
+
+  // Save mute preference to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gameMuted', isMuted.toString());
+    }
+  }, [isMuted]);
+
+  // Toggle mute function
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    
+    // Update game sounds if game is running
+    if (phaserGameRef.current) {
+      const scene = phaserGameRef.current.scene.getScene('default');
+      if (scene) {
+        // @ts-ignore
+        if (scene.bgdMusic) {
+          // @ts-ignore
+          scene.bgdMusic.setMute(!isMuted);
+        }
+      }
+    }
+  };
 
   // Score counting animation
   useEffect(() => {
@@ -94,6 +126,9 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     let currentDifficulty = 'easy'; // Track current difficulty level
     let gameOver = false;
     let gameOverDistance = 300;
+    
+    // Store mute state for use in game functions
+    const gameMuted = isMuted;
 
     // Function to determine difficulty based on score
     const getDifficulty = (currentScore: number) => {
@@ -276,7 +311,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       // @ts-ignore
       this.gameOverSound = this.sound.add('gameOverSound');
       bgdMusicConfig = {
-        mute: false,
+        mute: gameMuted,
         volume: 1,
         rate: 1,
         detune: 0,
@@ -480,7 +515,9 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           // Removed dynamic gravity effects - keeping normal gravity
           
           // @ts-ignore
-          this.jumpSound.play();
+          if (!gameMuted) {
+            this.jumpSound.play();
+          }
           // Sparkle effect from the player's feet - Create only 5 sparkles for better performance
           for (let i = 0; i < 5; i++) {
             (this as any).createSparkle(player.x, player.y + player.displayHeight / 2);
@@ -510,7 +547,9 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
           // Removed dynamic gravity effects for food collection - keeping normal gravity
           
           // @ts-ignore
-          this.eatSound.play();
+          if (!gameMuted) {
+            this.eatSound.play();
+          }
         }
       });
       this.physics.add.collider(platforms, ball, (collider: any) => {
@@ -1127,6 +1166,12 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         gameOver = true;
         gameOverOverlay.visible = true; // Show blur overlay
         
+        // Play game over sound if not muted
+        // @ts-ignore
+        if (!gameMuted && this.gameOverSound) {
+          this.gameOverSound.play();
+        }
+        
         // Hide Phaser text elements (we'll show them in React)
         gameOverText.visible = false;
         timerText.visible = false;
@@ -1552,9 +1597,37 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   
   return (
     <>
+      {/* Mute Button */}
+      <button
+        onClick={toggleMute}
+        style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          zIndex: 2001,
+          background: isMuted ? 'rgba(255, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
+          border: 'none',
+          borderRadius: '50%',
+          width: '50px',
+          height: '50px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          color: 'white',
+          fontSize: '20px',
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          boxShadow: isMuted ? '0 0 10px rgba(255, 0, 0, 0.5)' : 'none'
+        }}
+        title={isMuted ? 'Unmute' : 'Mute'}
+      >
+        {isMuted ? '🔇' : '🔊'}
+      </button>
+      
       {showPermissionBtn && (
         <button
-          style={{ position: 'absolute', top: 20, right: 20, zIndex: 2000 }}
+          style={{ position: 'absolute', top: 20, right: 80, zIndex: 2000 }}
           onClick={requestOrientationPermission}
         >
           Enable Tilt Controls
