@@ -783,7 +783,7 @@ export function Demo() {
                 </div>
               </div>
               {/* MonaCrush Card */}
-              <div>
+              {/* <div>
                 <button
                   onClick={() => setSelectedGame('candy')}
                   style={{
@@ -808,7 +808,7 @@ export function Demo() {
                     overflow: 'hidden'
                   }}
                 >
-                </button>
+                </button> */}
                 <div style={{  display: 'flex', justifyContent: 'center',width:"100%",scale:'1' }}>
                   <button
                     onClick={() => setSelectedGame('candy')}
@@ -1000,7 +1000,7 @@ export function Demo() {
               🎮 Hop Up
             </button>
             
-            <button
+            {/* <button
               onClick={handleStartCandyGame}
               style={{
                 width: '16rem',
@@ -1026,7 +1026,7 @@ export function Demo() {
               }}
             >
               🍭 MonaCrush
-            </button>
+            </button> */}
             
             <button
               onClick={handleStartStoneShooterGame}
