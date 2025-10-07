@@ -1447,36 +1447,48 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
   const { switchChain } = useSwitchChain();
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [claimedReward, setClaimedReward] = useState<{ type: RewardToken, amount: number } | null>(null);
+  const [dailyClaim, setDailyClaim] = useState<null | { reward: { token: RewardToken; amount: number; tokenAddress: string; decimals: number }, bestScore: number, game: 'Candy Crush' }>(null);
   const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('candyCrushMaxScore') || '0'));
   const { writeContract, data: claimData, isSuccess: claimSuccess, isError: claimError, error: claimErrorObj, reset: resetClaim } = useContractWrite();
   const { isLoading: isClaiming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimData });
 
-  // On game over, check for new high score and open modal
+  // On game over, attempt daily gift claim based on remaining (not just new high score)
   useEffect(() => {
-    if (gameOver) {
-      const prevBest = parseInt(localStorage.getItem('candyCrushMaxScore') || '0');
-      if (score > prevBest) {
-        setPreviousBestScore(prevBest); // Save previous best before updating
-        const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
-        const amount = getRandomValue(rewardType);
-        setClaimedReward({ type: rewardType, amount });
-        setShowGiftModal(true);
-        localStorage.setItem('candyCrushMaxScore', score.toString());
-        setBestScore(score);
-      } else {
+    const tryDailyGift = async () => {
+      if (!gameOver || score <= 0) return;
+      try {
+        const playerData = getPlayerData(context);
+        const res = await fetch('/api/daily-gifts/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fid: playerData.fid, game: 'Candy Crush' })
+        });
+        if (!res.ok) {
+          setShowGiftModal(false);
+          return;
+        }
+        const data = await res.json();
+        if (data?.success && data?.reward) {
+          setDailyClaim({ reward: data.reward, bestScore: data.bestScore, game: 'Candy Crush' });
+          setClaimedReward({ type: data.reward.token as RewardToken, amount: data.reward.amount });
+          setShowGiftModal(true);
+        } else {
+          setShowGiftModal(false);
+        }
+      } catch (_e) {
         setShowGiftModal(false);
       }
-    }
-  }, [gameOver]);
+    };
+    tryDailyGift();
+  }, [gameOver, score, context]);
 
   // Claim handler
   const handleClaimReward = async () => {
     try {
-      const rewardType = claimedReward?.type as RewardToken;
-      const amount = claimedReward?.amount;
-      if (!rewardType || amount == null) throw new Error('No reward selected');
-      const decimals = getTokenDecimals(rewardType);
-      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      if (!dailyClaim) throw new Error('No daily claim prepared');
+      const rewardType = dailyClaim.reward.token as RewardToken;
+      const amount = dailyClaim.reward.amount;
+      const amountInt = parseUnits(amount.toString(), dailyClaim.reward.decimals).toString();
       const playerData = getPlayerData(context);
       const userAddress = address || '';
       const res = await fetchWithVerification('/api/generate', {
@@ -1484,12 +1496,12 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userAddress,
-          tokenAddress: getTokenAddress(rewardType),
+          tokenAddress: dailyClaim.reward.tokenAddress,
           amount: amountInt,
           tokenName: rewardType,
           name: playerData.username,
           pfpUrl: playerData.pfpUrl,
-          score,
+          score: dailyClaim.bestScore,
           fid: playerData.fid,
           game: 'Candy Crush'
         })
@@ -1501,7 +1513,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
       }
       if (!res.ok) throw new Error('Failed to get signature');
       const { signature } = await res.json();
-      switchChain({ chainId: monadTestnet.id });
+       switchChain({ chainId: monadTestnet.id });
       writeContract({
         abi: [
           {
@@ -1519,7 +1531,7 @@ export default function CandyCrushGame({ onBack }: CandyCrushGameProps) {
         address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
         functionName: 'claimTokenReward',
         args: [
-          getTokenAddress(rewardType) as `0x${string}`,
+          dailyClaim.reward.tokenAddress as `0x${string}`,
           BigInt(amountInt),
           signature as `0x${string}`
         ]

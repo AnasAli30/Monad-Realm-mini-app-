@@ -43,6 +43,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     hash: claimData,
   });
   const [claimedReward, setClaimedReward] = useState<{ type: string, amount: number } | null>(null);
+  const [dailyClaim, setDailyClaim] = useState<null | { reward: { token: RewardToken; amount: number; tokenAddress: string; decimals: number }, bestScore: number, game: 'Hop' }>(null);
   
   // Add state for submit score modal
   const [showSubmitScoreModal, setShowSubmitScoreModal] = useState(false);
@@ -1379,11 +1380,10 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
   // Inside the component, add the reward claim logic:
   const handleClaimReward = async () => {
     try {
-      const rewardType = claimedReward?.type as RewardToken;
-      const amount = claimedReward?.amount;
-      if (!rewardType || amount == null) throw new Error('No reward selected');
-      const decimals = getTokenDecimals(rewardType);
-      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      if (!dailyClaim) throw new Error('No daily claim prepared');
+      const rewardType = dailyClaim.reward.token as RewardToken;
+      const amount = dailyClaim.reward.amount;
+      const amountInt = parseUnits(amount.toString(), dailyClaim.reward.decimals).toString();
       const playerData = getPlayerData(context);
       const userAddress = address || '';
       const res = await fetchWithVerification('/api/generate', {
@@ -1391,12 +1391,12 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userAddress,
-          tokenAddress: getTokenAddress(rewardType),
+          tokenAddress: dailyClaim.reward.tokenAddress,
           amount: amountInt,
           tokenName: rewardType,
           name: playerData.username,
           pfpUrl: playerData.pfpUrl,
-          score: gameOverData.score,
+          score: dailyClaim.bestScore,
           fid: playerData.fid,
           game: 'Monad Jump'
         })
@@ -1408,7 +1408,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
       }
       if (!res.ok) throw new Error('Failed to get signature');
       const { signature } = await res.json();
-      switchChain({ chainId: monadTestnet.id })
+       switchChain({ chainId: monadTestnet.id })
       writeContract({
         abi: [
           {
@@ -1426,7 +1426,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
         functionName: 'claimTokenReward',
         args: [
-          getTokenAddress(rewardType) as `0x${string}`,
+          dailyClaim.reward.tokenAddress as `0x${string}`,
           BigInt(amountInt),
           signature as `0x${string}`
         ]
@@ -1436,26 +1436,35 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     }
   };
 
-  // Function to open the gift modal and set reward
-  const openGiftModal = () => {
-    const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
-    const amount = getRandomValue(rewardType);
-    setClaimedReward({ type: rewardType, amount });
-    setShowGiftModal(true);
-  };
-
-  // Show gift modal when new high score is achieved
+  // On game over, attempt daily gift claim based on remaining (not strictly new high score)
   useEffect(() => {
-    if (
-      gameOver &&
-      gameOverData.score > 0 &&
-      gameOverData.bestScore > gameOverData.previousBestScore
-    ) {
-      openGiftModal();
-    } else {
-      setShowGiftModal(false);
-    }
-  }, [gameOver, gameOverData]);
+    const tryDailyGift = async () => {
+      if (!gameOver || gameOverData.score <= 0) return;
+      try {
+        const playerData = getPlayerData(context);
+        const res = await fetch('/api/daily-gifts/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fid: playerData.fid, game: 'Hop' })
+        });
+        if (!res.ok) {
+          setShowGiftModal(false);
+          return;
+        }
+        const data = await res.json();
+        if (data?.success && data?.reward) {
+          setDailyClaim({ reward: data.reward, bestScore: data.bestScore, game: 'Hop' });
+          setClaimedReward({ type: data.reward.token as RewardToken, amount: data.reward.amount });
+          setShowGiftModal(true);
+        } else {
+          setShowGiftModal(false);
+        }
+      } catch (_e) {
+        setShowGiftModal(false);
+      }
+    };
+    tryDailyGift();
+  }, [gameOver, gameOverData, context]);
 
   // Show submit score modal if not a new high score
   useEffect(() => {

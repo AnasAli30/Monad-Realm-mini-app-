@@ -11,6 +11,7 @@ import { useAccount, useSwitchChain } from 'wagmi';
 import { useMiniAppContext } from '@/hooks/use-miniapp-context';
 import { monadTestnet } from 'wagmi/chains';
 import { EnvelopeReward } from './EnvelopeReward';
+import UserStats from '@/components/UserStats';
 
 // Dynamic Loading Component
 const DynamicLoader = ({ title, subtitle, description, background, textColor }: {
@@ -341,7 +342,7 @@ function ShareButton() {
 export function Demo() {
   
   const { context } = useFrame();
-  const [currentTab, setCurrentTab] = useState<'game' | 'earn' | 'pvp' | 'leaderboard'>('game');
+    const [currentTab, setCurrentTab] = useState<'game' | 'earn' | 'pvp' | 'leaderboard' | 'userstats'>('game');
   const [selectedGame, setSelectedGame] = useState<null | 'hop' | 'candy' | 'blaster'>(null);
   const { actions } = useMiniAppContext();
   const { switchChain } = useSwitchChain();
@@ -663,6 +664,25 @@ export function Demo() {
       >
         <FontAwesomeIcon icon={faTrophy} size="lg" />
       </button>
+      {/* <button
+        onClick={() => setCurrentTab('userstats')}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'none',
+          border: 'none',
+          color: currentTab === 'userstats' ? (theme === 'dark' ? '#10b981' : '#10b981') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
+          fontSize: currentTab === 'userstats' ? '20px' : '18px',
+          fontWeight: currentTab === 'userstats' ? 'bold' : 'normal',
+          cursor: 'pointer',
+        }}
+      > */}
+        {/* Simple user icon */}
+        {/* <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: currentTab === 'userstats' ? 1 : 0.5 }}>
+          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5Zm0 2c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7Z" fill="currentColor"/>
+        </svg> */}
+      {/* </button> */}
     </div>
   );
 
@@ -783,7 +803,7 @@ export function Demo() {
                 </div>
               </div>
               {/* MonaCrush Card */}
-              {/* <div>
+              <div>
                 <button
                   onClick={() => setSelectedGame('candy')}
                   style={{
@@ -808,7 +828,7 @@ export function Demo() {
                     overflow: 'hidden'
                   }}
                 >
-                </button> */}
+                </button>
                 <div style={{  display: 'flex', justifyContent: 'center',width:"100%",scale:'1' }}>
                   <button
                     onClick={() => setSelectedGame('candy')}
@@ -915,6 +935,46 @@ export function Demo() {
         `}</style>
       </div>
       </>
+    );
+  }
+
+  if (currentTab === 'userstats') {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        paddingBottom: '80px', 
+        background: colors.background, 
+        color: colors.text,
+        transition: 'background 0.3s, color 0.3s',
+      }}>
+        <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}>
+          <ThemeToggle />
+        </div>
+        <div style={{ padding: '16px 12px 0 12px', maxWidth: 520, margin: '0 auto' }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 12px 0' }}>Your Stats</h1>
+          <UserStats />
+        </div>
+        <ShareButton />
+        <BottomNavbar />
+        {/* THEME SCROLLBAR CSS */}
+        <style jsx global>{`
+          ::-webkit-scrollbar {
+            width: 10px;
+            background: ${theme === 'dark' ? '#181a20' : '#e8e6e3'};
+          }
+          ::-webkit-scrollbar-thumb {
+            background: ${theme === 'dark' ? '#23272f' : '#cfcfcf'};
+            border-radius: 8px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: ${theme === 'dark' ? '#31343a' : '#bdbdbd'};
+          }
+          html {
+            scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
+            scrollbar-width: thin;
+          }
+        `}</style>
+      </div>
     );
   }
 

@@ -1,31 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import { keccak256, toUtf8Bytes } from 'ethers';
+import {connectToDatabase} from "@/lib/mongodb"
 
 // MongoDB connection
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-const dbName = process.env.DB_NAME || 'monad-realm';
-
-let client: MongoClient;
-let db: Db;
-
-async function connectToDatabase() {
-  if (!client) {
-    try {
-      client = new MongoClient(uri);
-      await client.connect();
-      db = client.db(dbName);
-    } catch (err) {
-      console.error('Failed to connect to MongoDB:', err);
-      throw new Error('Database connection failed');
-    }
-  }
-  if (!db) {
-    console.error('Database is undefined after connection attempt');
-    throw new Error('Database is undefined after connection attempt');
-  }
-  return db;
-}
 
 interface PlayerDocument {
   _id?: string;
@@ -55,7 +33,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
 
     const database = await connectToDatabase();
-    const collection: Collection<PlayerDocument> = database.collection('players');
+    const collection: Collection<PlayerDocument> = database.db.collection('players');
 
     let pipeline: any[] = [];
 
@@ -146,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     const database = await connectToDatabase();
     // Check fusedKey in DB
-    const fusedKeyCollection = database.collection('usedFusedKeys');
+    const fusedKeyCollection = database.db.collection('usedFusedKeys');
     const existingFusedKey = await fusedKeyCollection.findOne({ fusedKey });
     if (existingFusedKey) {
       return NextResponse.json({ success: false, error: 'used' }, { status: 409 });
@@ -163,7 +141,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const collection: Collection<PlayerDocument> = database.collection('players');
+    const collection: Collection<PlayerDocument> = database.db.collection('players');
 
     // Sanitize inputs
     const sanitizedScore = Math.max(0, Math.floor(score));

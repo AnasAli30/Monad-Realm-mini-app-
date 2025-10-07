@@ -1291,24 +1291,34 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
     };
   }, [gameKey, controlMode]);
 
-  // On game over, check for new high score and open modal
+  // On game over, attempt daily gift claim based on remaining (not strictly new high score)
   useEffect(() => {
-    if (
-      gameOver &&
-      gameOverData.score > 0 &&
-      gameOverData.bestScore > gameOverData.previousBestScore
-    ) {
-      const rewardType = rewardTypes[Math.floor(Math.random() * rewardTypes.length)] as RewardToken;
-      const amount = getRandomValue(rewardType);
-      setClaimedReward({ type: rewardType, amount });
-      setShowGiftModal(true);
-      localStorage.setItem('stoneShooterMaxScore', gameOverData.bestScore.toString());
-      setBestScore(gameOverData.bestScore);
-      setPreviousBestScore(gameOverData.previousBestScore);
-    } else {
-      setShowGiftModal(false);
-    }
-  }, [gameOver, gameOverData]);
+    const tryDailyGift = async () => {
+      if (!gameOver || gameOverData.score <= 0) return;
+      try {
+        const playerData = getPlayerData(context);
+        const res = await fetch('/api/daily-gifts/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fid: playerData.fid, game: 'Bounce Blaster' })
+        });
+        if (!res.ok) {
+          setShowGiftModal(false);
+          return;
+        }
+        const data = await res.json();
+        if (data?.success && data?.reward) {
+          setClaimedReward({ type: data.reward.token as RewardToken, amount: data.reward.amount });
+          setShowGiftModal(true);
+        } else {
+          setShowGiftModal(false);
+        }
+      } catch (_e) {
+        setShowGiftModal(false);
+      }
+    };
+    tryDailyGift();
+  }, [gameOver, gameOverData, context]);
 
   // Claim handler
   const handleClaimReward = async () => {
@@ -1330,7 +1340,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
           tokenName: rewardType,
           name: playerData.username,
           pfpUrl: playerData.pfpUrl,
-          score: gameOverData.score,
+          score: gameOverData.bestScore,
           fid: playerData.fid,
           game: 'Bounce Blaster'
         })
@@ -1342,7 +1352,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       }
       if (!res.ok) throw new Error('Failed to get signature');
       const { signature } = await res.json();
-      switchChain({ chainId: monadTestnet.id });
+      await switchChain({ chainId: monadTestnet.id });
       writeContract({
         abi: [
           {
