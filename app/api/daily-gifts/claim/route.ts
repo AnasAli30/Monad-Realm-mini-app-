@@ -29,10 +29,20 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
     // Initialize dailyGifts if missing
-    const dailyGifts = user.dailyGifts || GAMES.reduce((acc, g) => {
-      acc[g] = { claimed: 0, limit: LIMIT_PER_GAME, windowHours: WINDOW_HOURS, resetsAt: getResetTime(now) };
-      return acc;
-    }, {} as Record<GameKey, { claimed: number; limit: number; windowHours: number; resetsAt: Date }>);
+    let dailyGifts = user.dailyGifts;
+    if (!dailyGifts) {
+      dailyGifts = GAMES.reduce((acc, g) => {
+        acc[g] = { claimed: 0, limit: LIMIT_PER_GAME, windowHours: WINDOW_HOURS, resetsAt: getResetTime(now) };
+        return acc;
+      }, {} as Record<GameKey, { claimed: number; limit: number; windowHours: number; resetsAt: Date }>);
+    } else {
+      // Ensure all games are present in dailyGifts
+      for (const g of GAMES) {
+        if (!dailyGifts[g]) {
+          dailyGifts[g] = { claimed: 0, limit: LIMIT_PER_GAME, windowHours: WINDOW_HOURS, resetsAt: getResetTime(now) };
+        }
+      }
+    }
 
     // Reset if expired
     let changed = false;
@@ -44,12 +54,15 @@ export async function POST(request: NextRequest) {
         changed = true;
       }
     }
-    if (changed) {
+    if (changed || !user.dailyGifts) {
       await players.updateOne({ fid: Number(fid) }, { $set: { dailyGifts } });
     }
 
     // Check availability
     const entry = dailyGifts[game];
+    if (!entry) {
+      return NextResponse.json({ error: 'Game entry not found' }, { status: 500 });
+    }
     if (entry.claimed >= entry.limit) {
       const msLeft = Math.max(0, new Date(entry.resetsAt).getTime() - now.getTime());
       return NextResponse.json({ error: 'No gifts left in this window', msLeft }, { status: 429 });
@@ -78,7 +91,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       reward: { token: rewardType, amount, tokenAddress, decimals },
-      window: { resetsAt: dailyGifts[game].resetsAt, claimed: entry.claimed + 1, limit: entry.limit },
+      window: { resetsAt: entry.resetsAt, claimed: entry.claimed + 1, limit: entry.limit },
       bestScore,
       game
     });
