@@ -1358,7 +1358,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
       }
       if (!res.ok) throw new Error('Failed to get signature');
       const { signature } = await res.json();
-      await switchChain({ chainId: monadTestnet.id });
+       switchChain({ chainId: monadTestnet.id });
       writeContract({
         abi: [
           {
@@ -1367,7 +1367,6 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
             stateMutability: 'nonpayable',
             inputs: [
               { name: 'token', type: 'address' },
-              { name: 'to', type: 'address' },
               { name: 'amount', type: 'uint256' },
               { name: 'signature', type: 'bytes' }
             ],
@@ -1378,7 +1377,6 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         functionName: 'claimTokenReward',
         args: [
           dailyClaim.reward.tokenAddress as `0x${string}`,
-          userAddress as `0x${string}`,
           BigInt(amountInt),
           signature as `0x${string}`
         ]
