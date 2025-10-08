@@ -40,6 +40,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   const { switchChain } = useSwitchChain();
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [claimedReward, setClaimedReward] = useState<{ type: RewardToken, amount: number } | null>(null);
+  const [dailyClaim, setDailyClaim] = useState<null | { reward: { token: RewardToken; amount: number; tokenAddress: string; decimals: number }, bestScore: number, game: string }>(null);
   const [bestScore, setBestScore] = useState(() => parseInt(localStorage.getItem('stoneShooterMaxScore') || '0'));
   const [previousBestScore, setPreviousBestScore] = useState(() => parseInt(localStorage.getItem('stoneShooterMaxScore') || '0'));
   const [showConfirmEnd, setShowConfirmEnd] = useState(false);
@@ -1308,6 +1309,12 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         }
         const data = await res.json();
         if (data?.success && data?.reward) {
+          // Store full dailyClaim data including bestScore from database
+          setDailyClaim({
+            reward: data.reward,
+            bestScore: data.bestScore,
+            game: data.game || 'Bounce Blaster'
+          });
           setClaimedReward({ type: data.reward.token as RewardToken, amount: data.reward.amount });
           setShowGiftModal(true);
         } else {
@@ -1323,24 +1330,23 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
   // Claim handler
   const handleClaimReward = async () => {
     try {
-      const rewardType = claimedReward?.type as RewardToken;
-      const amount = claimedReward?.amount;
-      if (!rewardType || amount == null) throw new Error('No reward selected');
-      const decimals = getTokenDecimals(rewardType);
-      const amountInt = parseUnits(amount.toString(), decimals).toString();
+      if (!dailyClaim) throw new Error('No daily claim prepared');
+      const rewardType = dailyClaim.reward.token as RewardToken;
+      const amount = dailyClaim.reward.amount;
+      const amountInt = parseUnits(amount.toString(), dailyClaim.reward.decimals).toString();
       const playerData = getPlayerData(context);
       const userAddress = address || '';
-      const res = await   fetchWithVerification('/api/generate', {
+      const res = await fetchWithVerification('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userAddress,
-          tokenAddress: getTokenAddress(rewardType),
+          tokenAddress: dailyClaim.reward.tokenAddress,
           amount: amountInt,
           tokenName: rewardType,
           name: playerData.username,
           pfpUrl: playerData.pfpUrl,
-          score: gameOverData.bestScore,
+          score: dailyClaim.bestScore,
           fid: playerData.fid,
           game: 'Bounce Blaster'
         })
@@ -1361,6 +1367,7 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
             stateMutability: 'nonpayable',
             inputs: [
               { name: 'token', type: 'address' },
+              { name: 'to', type: 'address' },
               { name: 'amount', type: 'uint256' },
               { name: 'signature', type: 'bytes' }
             ],
@@ -1370,7 +1377,8 @@ export default function StoneShooterGame({ onBack }: StoneShooterGameProps) {
         address: process.env.NEXT_PUBLIC_TOKEN_REWARD_ADDRESS as `0x${string}`,
         functionName: 'claimTokenReward',
         args: [
-          getTokenAddress(rewardType) as `0x${string}`,
+          dailyClaim.reward.tokenAddress as `0x${string}`,
+          userAddress as `0x${string}`,
           BigInt(amountInt),
           signature as `0x${string}`
         ]

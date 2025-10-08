@@ -52,8 +52,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No score found for this user/game' }, { status: 403 });
     }
     const dbBestScore = player.games[game].score;
-    console.log(dbBestScore,score)
-    if (Number(score)< dbBestScore) {
+    console.log('DB Best Score:', dbBestScore, 'Submitted Score:', score);
+    
+    // For daily gifts, the score sent is the best score from DB (sent by /api/daily-gifts/claim)
+    // So we just verify it matches the database to prevent tampering
+    if (Number(score) !== dbBestScore) {
       return NextResponse.json({ error: 'Score does not match database. Please refresh and try again.' }, { status: 403 });
     }
     // --- END NEW ---
