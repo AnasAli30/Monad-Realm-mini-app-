@@ -353,9 +353,12 @@ export function Demo() {
     }
     return false;
   });
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [showEnvelopeReward, setShowEnvelopeReward] = useState(false);
   const [claimed, setClaimed] = useState(false);
   const [showEnvelope, setShowEnvelope] = useState(false);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [showHelpPopup, setShowHelpPopup] = useState(false);
 
   // THEME STATE
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -425,6 +428,15 @@ export function Demo() {
     checkEnvelope();
   }, [isConnected, context?.user?.fid]);
 
+  // Check for first-time user and show welcome popup
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hasSeenWelcome = localStorage.getItem('monad-welcome-seen');
+    if (!hasSeenWelcome) {
+      setShowWelcomePopup(true);
+    }
+  }, []);
+
   // useEffect(() => {
   //   fetch("/api/check-envelope")
   //     .then((res) => res.json())
@@ -450,25 +462,47 @@ export function Demo() {
       '/images/bouce.png'
     ];
 
+    let loadedCount = 0;
+    const totalImages = gameImages.length;
+
     const preloadImage = (src: string) => {
       return new Promise((resolve, reject) => {
         const img = new Image();
-        img.onload = () => resolve(src);
-        img.onerror = reject;
+        img.onload = () => {
+          loadedCount++;
+          const progress = Math.round((loadedCount / totalImages) * 100);
+          setLoadingProgress(progress);
+          resolve(src);
+        };
+        img.onerror = () => {
+          loadedCount++;
+          const progress = Math.round((loadedCount / totalImages) * 100);
+          setLoadingProgress(progress);
+          reject(new Error(`Failed to load ${src}`));
+        };
         img.src = src;
       });
     };
 
+    // Start with 0% progress
+    setLoadingProgress(0);
+
     Promise.all(gameImages.map(preloadImage))
       .then(() => {
-        setImagesLoaded(true);
-        sessionStorage.setItem('monad-images-loaded', 'true');
+        setLoadingProgress(100);
+        setTimeout(() => {
+          setImagesLoaded(true);
+          sessionStorage.setItem('monad-images-loaded', 'true');
+        }, 300); // Small delay to show 100% completion
       })
       .catch((error) => {
         console.error('Failed to load images:', error);
-        // Still show the page even if some images fail
-        setImagesLoaded(true);
-        sessionStorage.setItem('monad-images-loaded', 'true');
+        setLoadingProgress(100);
+        setTimeout(() => {
+          // Still show the page even if some images fail
+          setImagesLoaded(true);
+          sessionStorage.setItem('monad-images-loaded', 'true');
+        }, 300);
       });
   }, [imagesLoaded]);
 
@@ -528,6 +562,87 @@ export function Demo() {
           <h1 className="text-3xl font-bold text-center">
             Monad Realm
           </h1>
+          
+          {/* Loading Progress Bar */}
+          <div style={{
+            width: '300px',
+            maxWidth: '90vw',
+            marginTop: '2rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '0.5rem'
+            }}>
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '500',
+                color: colors.text,
+                opacity: 0.8
+              }}>
+                {loadingProgress < 33 && 'Loading assets...'}
+                {loadingProgress >= 33 && loadingProgress < 66 && 'Preparing graphics...'}
+                {loadingProgress >= 66 && loadingProgress < 100 && 'Finalizing...'}
+                {loadingProgress === 100 && 'Ready to play!'}
+              </span>
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: colors.text
+              }}>
+                {loadingProgress}%
+              </span>
+            </div>
+            
+            {/* Progress Bar Container */}
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              position: 'relative'
+            }}>
+              {/* Progress Bar Fill */}
+              <div style={{
+                height: '100%',
+                width: `${loadingProgress}%`,
+                background: theme === 'dark' 
+                  ? 'linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)' 
+                  : 'linear-gradient(90deg, #3b82f6, #06b6d4, #10b981)',
+                borderRadius: '4px',
+                transition: 'width 0.3s ease-in-out',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {/* Shimmer Effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+                  animation: 'shimmer 2s infinite'
+                }} />
+              </div>
+            </div>
+            
+            {/* Loading Steps */}
+            <div style={{
+              marginTop: '1rem',
+              fontSize: '12px',
+              color: colors.text,
+              opacity: 0.7,
+              textAlign: 'center'
+            }}>
+              {loadingProgress < 33 && 'Loading game assets...'}
+              {loadingProgress >= 33 && loadingProgress < 66 && 'Preparing graphics...'}
+              {loadingProgress >= 66 && loadingProgress < 100 && 'Almost ready...'}
+              {loadingProgress === 100 && 'Welcome to Monad Realm!'}
+            </div>
+          </div>
         </div>
         {/* THEME SCROLLBAR CSS */}
         <style jsx global>{`
@@ -545,6 +660,10 @@ export function Demo() {
           html {
             scrollbar-color: ${theme === 'dark' ? '#23272f #181a20' : '#cfcfcf #e8e6e3'};
             scrollbar-width: thin;
+          }
+          @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
           }
         `}</style>
       </SafeAreaContainer>
@@ -615,23 +734,21 @@ export function Demo() {
         <FontAwesomeIcon icon={faGamepadSolid} size="lg" style={{ opacity: currentTab === 'game' ? 1 : 0.5 }} />
       </button>
       <button
-        onClick={() => setCurrentTab('earn')}
+        onClick={() => setCurrentTab('userstats')}
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           background: 'none',
           border: 'none',
-          opacity: 0.3,
-          color: currentTab === 'earn' ? (theme === 'dark' ? '#FFD700' : '#FFD700') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
-          fontSize: currentTab === 'earn' ? '20px' : '16px',
-          fontWeight: currentTab === 'earn' ? 'bold' : 'normal',
+          color: currentTab === 'userstats' ? (theme === 'dark' ? '#5CE65C' : '#5CE65C') : (theme === 'dark' ? '#aaa' : 'rgba(0,0,0,0.5)'),
+          fontSize: currentTab === 'userstats' ? '20px' : '18px',
+          fontWeight: currentTab === 'userstats' ? 'bold' : 'normal',
           cursor: 'pointer',
-        }}
-      disabled>
+        }}>
         <FontAwesomeIcon icon={faCoins} size="lg" />
       </button>
-      <button
+      {/* <button
         onClick={() => setCurrentTab('pvp')}
         style={{
           display: 'flex',
@@ -647,7 +764,7 @@ export function Demo() {
         }}
       disabled>
         <FontAwesomeIcon icon={faUsers} size="lg" />
-      </button>
+      </button> */}
       <button
         onClick={() => setCurrentTab('leaderboard')}
         style={{
@@ -705,6 +822,228 @@ export function Demo() {
          <EnvelopeReward setClaimed={setClaimed} />
        </div> 
        }
+
+      {/* Welcome Popup */}
+      {showWelcomePopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 4000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+            borderRadius: '24px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '100%',
+            border: '2px solid rgba(59, 130, 246, 0.5)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+            position: 'relative',
+            animation: 'slideInUp 0.5s ease-out'
+          }}>
+            <button
+              onClick={() => {
+                setShowWelcomePopup(false);
+                localStorage.setItem('monad-welcome-seen', 'true');
+              }}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '18px',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '48px', 
+                marginBottom: '16px',
+                background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                🎁
+              </div>
+              <h2 style={{
+                color: '#ffffff',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                marginBottom: '16px',
+                margin: 0
+              }}>
+                Welcome to Monad Realm!
+              </h2>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '16px',
+                lineHeight: '1.6',
+                margin: '16px 0 24px 0'
+              }}>
+                🎮 <strong>How to Play:</strong><br/>
+                • Choose your favorite game<br/>
+                • Play and achieve high scores<br/>
+                • Compete on leaderboards<br/><br/>
+                🎁 <strong>Daily Gift Boxes:</strong><br/>
+                • Get 5 gift boxes per game every 12 hours<br/>
+                • Complete any game to claim rewards<br/>
+                • Earn tokens and rewards daily!
+              </p>
+              <button
+                onClick={() => {
+                  setShowWelcomePopup(false);
+                  localStorage.setItem('monad-welcome-seen', 'true');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Let's Start Playing! 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Popup */}
+      {showHelpPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 4000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b, #0f172a)',
+            borderRadius: '24px',
+            padding: '32px',
+            maxWidth: '400px',
+            width: '100%',
+            border: '2px solid rgba(59, 130, 246, 0.5)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
+            position: 'relative',
+            animation: 'slideInUp 0.5s ease-out'
+          }}>
+            <button
+              onClick={() => setShowHelpPopup(false)}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '18px',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+            
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ 
+                fontSize: '48px', 
+                marginBottom: '16px',
+                background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                ❓
+              </div>
+              <h2 style={{
+                color: '#ffffff',
+                fontSize: '24px',
+                fontWeight: 'bold',
+                marginBottom: '16px',
+                margin: 0
+              }}>
+                How to Play & Earn
+              </h2>
+              <p style={{
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontSize: '16px',
+                lineHeight: '1.6',
+                margin: '16px 0 24px 0'
+              }}>
+                🎮 <strong>How to Play:</strong><br/>
+                • Choose your favorite game<br/>
+                • Play and achieve high scores<br/>
+                • Compete on leaderboards<br/><br/>
+                🎁 <strong>Daily Gift Boxes:</strong><br/>
+                • Get 5 gift boxes per game every 12 hours<br/>
+                • Complete any game to claim rewards<br/>
+                • Earn tokens and rewards daily!
+              </p>
+              <button
+                onClick={() => setShowHelpPopup(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Got it! 👍
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ 
         paddingTop: '10px',
         minHeight: '100vh',
@@ -745,6 +1084,147 @@ export function Demo() {
             />
           ))}
         </div>
+        
+        {/* Wallet Connection Prompt */}
+        {!isConnected && (
+          <div style={{
+            position: 'relative',
+            zIndex: 10,
+            marginBottom: '20px',
+            padding: '0 20px'
+          }}>
+            <div style={{
+              background: theme === 'dark' 
+                ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8))'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.8))',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '20px',
+              padding: '24px',
+              border: theme === 'dark' 
+                ? '1px solid rgba(59, 130, 246, 0.3)'
+                : '1px solid rgba(59, 130, 246, 0.2)',
+              boxShadow: theme === 'dark'
+                ? '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.1)'
+                : '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.05)',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              {/* Animated Background Effect */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: '-100%',
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent)',
+                animation: 'shimmer 3s infinite',
+                borderRadius: '20px'
+              }} />
+              
+              <div style={{
+                position: 'relative',
+                zIndex: 1
+              }}>
+                <div style={{
+                  fontSize: '48px',
+                  marginBottom: '16px',
+                  background: 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  🔗
+                </div>
+                
+                <h2 style={{
+                  color: colors.text,
+                  fontSize: '24px',
+                  fontWeight: 'bold',
+                  marginBottom: '12px',
+                  margin: 0
+                }}>
+                  Connect Your Wallet
+                </h2>
+                
+                <p style={{
+                  color: theme === 'dark' ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+                  fontSize: '16px',
+                  lineHeight: '1.6',
+                  margin: '0 0 24px 0'
+                }}>
+                  Connect your wallet to start playing games and earning rewards!
+                </p>
+                
+                <button
+                  onClick={() => switchChain({ chainId: monadTestnet.id })}
+                  style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '16px',
+                    padding: '16px 32px',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    margin: '0 auto',
+                    minWidth: '200px'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.6)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.4)';
+                  }}
+                >
+                  <span>🔗</span>
+                  <span>Connect Wallet</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Help Icon - Top Left */}
+        <div style={{ 
+          position: 'fixed', 
+          top: 18, 
+          left: 18, 
+          zIndex: 3000,
+          background: 'rgba(0, 0, 0, 0.3)',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          transition: 'all 0.3s ease'
+        }}
+        onClick={() => setShowHelpPopup(true)}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.background = 'rgba(0, 0, 0, 0.3)';
+        }}
+        >
+          <span style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>?</span>
+        </div>
+
         {/* Absolutely position the theme toggle at the top right, above all content */}
         {/* <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}> */}
           <ThemeToggle />
@@ -914,6 +1394,16 @@ export function Demo() {
               opacity: 0.6;
             }
           }
+          @keyframes slideInUp {
+            from {
+              transform: translateY(30px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
         `}</style>
         {/* THEME SCROLLBAR CSS */}
         <style jsx global>{`
@@ -950,10 +1440,9 @@ export function Demo() {
         <div style={{ position: 'fixed', top: 18, right: 18, zIndex: 3000 }}>
           <ThemeToggle />
         </div>
-        <div style={{ padding: '16px 12px 0 12px', maxWidth: 520, margin: '0 auto' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0 12px 0' }}>Your Stats</h1>
-          <UserStats />
-        </div>
+          <div style={{ padding: '16px 12px 0 12px', maxWidth: 520, margin: '0 auto' }}>
+            <UserStats theme={theme} />
+          </div>
         <ShareButton />
         <BottomNavbar />
         {/* THEME SCROLLBAR CSS */}

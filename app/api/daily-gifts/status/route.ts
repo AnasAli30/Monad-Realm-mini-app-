@@ -44,12 +44,43 @@ export async function POST(request: NextRequest) {
         { $set: { dailyGifts } },
         { upsert: true }
       );
+    } else {
+      // Ensure all games are present in dailyGifts
+      let needsUpdate = false;
+      for (const game of GAMES) {
+        if (!dailyGifts[game]) {
+          dailyGifts[game] = {
+            claimed: 0,
+            limit: LIMIT_PER_GAME,
+            windowHours: WINDOW_HOURS,
+            resetsAt: getResetTime(now),
+          };
+          needsUpdate = true;
+        }
+      }
+      if (needsUpdate) {
+        await players.updateOne(
+          { fid: Number(fid) },
+          { $set: { dailyGifts } }
+        );
+      }
     }
 
     // Reset if window passed
     let changed = false;
     for (const game of GAMES) {
       const g = dailyGifts[game];
+      if (!g) {
+        // This shouldn't happen after the initialization above, but just in case
+        dailyGifts[game] = {
+          claimed: 0,
+          limit: LIMIT_PER_GAME,
+          windowHours: WINDOW_HOURS,
+          resetsAt: getResetTime(now),
+        };
+        changed = true;
+        continue;
+      }
       const resetsAt = new Date(g.resetsAt);
       if (now >= resetsAt) {
         dailyGifts[game] = {
@@ -71,6 +102,26 @@ export async function POST(request: NextRequest) {
     const responsePerGame = Object.fromEntries(
       GAMES.map((game) => {
         const g = dailyGifts![game];
+        if (!g) {
+          // Fallback if somehow the game entry is missing
+          const fallbackEntry = {
+            claimed: 0,
+            limit: LIMIT_PER_GAME,
+            windowHours: WINDOW_HOURS,
+            resetsAt: getResetTime(now),
+          };
+          const resetsAt = new Date(fallbackEntry.resetsAt);
+          const remaining = Math.max(0, fallbackEntry.limit - fallbackEntry.claimed);
+          const msLeft = Math.max(0, resetsAt.getTime() - now.getTime());
+          return [game, {
+            claimed: fallbackEntry.claimed,
+            limit: fallbackEntry.limit,
+            remaining,
+            resetsAt,
+            msLeft,
+            windowHours: fallbackEntry.windowHours,
+          }];
+        }
         const resetsAt = new Date(g.resetsAt);
         const remaining = Math.max(0, g.limit - g.claimed);
         const msLeft = Math.max(0, resetsAt.getTime() - now.getTime());

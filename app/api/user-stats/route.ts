@@ -10,8 +10,8 @@ export async function POST(request: NextRequest) {
     const { fid } = await request.json();
     if (!fid) return NextResponse.json({ error: 'Missing fid' }, { status: 400 });
 
-    const { db } = await connectToDatabase();
-    const players = db.collection('players');
+    const database = await connectToDatabase();
+    const players = database.db.collection('players');
     const user = await players.findOne({ fid: Number(fid) });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
