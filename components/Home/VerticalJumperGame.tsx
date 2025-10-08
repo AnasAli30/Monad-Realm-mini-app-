@@ -1427,6 +1427,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         functionName: 'claimTokenReward',
         args: [
           dailyClaim.reward.tokenAddress as `0x${string}`,
+          userAddress as `0x${string}`,
           BigInt(amountInt),
           signature as `0x${string}`
         ]
