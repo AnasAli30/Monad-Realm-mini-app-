@@ -800,7 +800,7 @@ const Leaderboard = () => {
         // border: '1px solid rgba(220, 38, 38, 0.3)'
       }}>
         <div style={{ color: '#ffffff', fontSize: '18px', fontWeight: 'bold' }}>
-          {timeLeft.days}d {timeLeft.hours}h
+          {timeLeft.days === 0 && timeLeft.hours === 0 ? 'Coming Soon' : `${timeLeft.days}d ${timeLeft.hours}h`}
         </div>
       </div>
       
