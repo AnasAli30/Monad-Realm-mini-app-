@@ -43,7 +43,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
     hash: claimData,
   });
   const [claimedReward, setClaimedReward] = useState<{ type: string, amount: number } | null>(null);
-  const [dailyClaim, setDailyClaim] = useState<null | { reward: { token: RewardToken; amount: number; tokenAddress: string; decimals: number }, bestScore: number, game: 'Hop' }>(null);
+  const [dailyClaim, setDailyClaim] = useState<null | { reward: { token: RewardToken; amount: number; tokenAddress: string; decimals: number }, bestScore: number, game: string }>(null);
   
   // Add state for submit score modal
   const [showSubmitScoreModal, setShowSubmitScoreModal] = useState(false);
@@ -1445,7 +1445,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         const res = await fetch('/api/daily-gifts/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fid: playerData.fid, game: 'Hop' })
+          body: JSON.stringify({ fid: playerData.fid, game: 'Monad Jump' })
         });
         if (!res.ok) {
           setShowGiftModal(false);
@@ -1453,7 +1453,7 @@ export default function VerticalJumperGame({ onBack }: VerticalJumperGameProps) 
         }
         const data = await res.json();
         if (data?.success && data?.reward) {
-          setDailyClaim({ reward: data.reward, bestScore: data.bestScore, game: 'Hop' });
+          setDailyClaim({ reward: data.reward, bestScore: data.bestScore, game: data.game || 'Monad Jump' });
           setClaimedReward({ type: data.reward.token as RewardToken, amount: data.reward.amount });
           setShowGiftModal(true);
         } else {
